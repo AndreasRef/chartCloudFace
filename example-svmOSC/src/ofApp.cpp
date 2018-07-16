@@ -54,7 +54,17 @@ void ofApp::update(){
     if(grabber.isFrameNew()){
         tracker.update(grabber);
         
-        if(tracker.size() > 0){
+        
+        vector<ofxFaceTracker2Instance> instances = tracker.getInstances();
+        if (instances.size() == 0) {
+            return;
+        }
+        
+//        ofxFaceTracker2Landmarks landmarks = instances[0].getLandmarks();
+//        vector<ofVec2f> points = landmarks.getImagePoints();
+//        ofRectangle bb = instances[0].getBoundingBox();
+        
+            
             // Run the classifiers and update the filters
             bigSmileValue.update(learned_functions[0](makeSample()));
             smallSmileValue.update(learned_functions[1](makeSample()));
@@ -66,19 +76,17 @@ void ofApp::update(){
             m.addFloatArg(smallSmileValue.value());
             m.addFloatArg(bigSmileValue.value());
             sender.sendMessage(m, false);
+        
             
-            
-            
-            
-            
-            //All of this should be redone according to normalized values
+            //Sloppy, should be redone with orientation
             
             //Gesture
             faceDist = tracker.getInstances()[0].getPoseMatrix().getRowAsVec3f(3)[2];//Okay measure for distance between -2000, -10000
-            faceDistMapped = ofMap(faceDist, -10000,-2000,0,1);
+            faceDistMapped = ofMap(faceDist, -10000,-2000,0,5);
             
-            
-            filteredEyeBrows.update( getGesture(RIGHT_EYEBROW_HEIGHT) / (faceDistMapped) + getGesture(LEFT_EYEBROW_HEIGHT) / (faceDistMapped) );
+            filteredEyeBrows.update((getGesture(RIGHT_EYEBROW_HEIGHT) + getGesture(LEFT_EYEBROW_HEIGHT) + getGesture(RIGHT_EYE_OPENNESS) + getGesture(LEFT_EYE_OPENNESS)) / faceDistMapped ); //Also add eyes
+            //filteredEyeBrows.update( getGesture(RIGHT_EYEBROW_HEIGHT) / (faceDistMapped) + getGesture(LEFT_EYEBROW_HEIGHT) / (faceDistMapped) );
+        //filteredEyeBrows.update( getGesture(RIGHT_EYEBROW_HEIGHT) + getGesture(LEFT_EYEBROW_HEIGHT));
             
             
             //Somewhat decent calculation of dist aware gesture value...
@@ -90,7 +98,7 @@ void ofApp::update(){
 //
 //            cout << "MOUTH_HEIGHT: " << getGesture(MOUTH_HEIGHT) / (faceDistMapped) << "\n" << "\n" << "\n";
             
-        }
+        
     }
 }
 
