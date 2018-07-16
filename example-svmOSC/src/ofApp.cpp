@@ -88,17 +88,6 @@ void ofApp::update(){
             //filteredEyeBrows.update( getGesture(RIGHT_EYEBROW_HEIGHT) / (faceDistMapped) + getGesture(LEFT_EYEBROW_HEIGHT) / (faceDistMapped) );
         //filteredEyeBrows.update( getGesture(RIGHT_EYEBROW_HEIGHT) + getGesture(LEFT_EYEBROW_HEIGHT));
             
-            
-            //Somewhat decent calculation of dist aware gesture value...
-//            cout << "RIGHT_EYE_OPENNESS: " << getGesture(RIGHT_EYE_OPENNESS) / (faceDistMapped) << "\n" << "\n";
-//            cout << "LEFT_EYE_OPENNESS: " << getGesture(LEFT_EYE_OPENNESS) / (faceDistMapped) << "\n" << "\n" << "\n";
-//
-//            cout << "RIGHT_EYEBROW_HEIGHT: " << getGesture(RIGHT_EYEBROW_HEIGHT) / (faceDistMapped) << "\n" << "\n";
-//            cout << "LEFT_EYEBROW_HEIGHT: " << getGesture(LEFT_EYEBROW_HEIGHT) / (faceDistMapped) << "\n" << "\n" << "\n";
-//
-//            cout << "MOUTH_HEIGHT: " << getGesture(MOUTH_HEIGHT) / (faceDistMapped) << "\n" << "\n" << "\n";
-            
-        
     }
 }
 
