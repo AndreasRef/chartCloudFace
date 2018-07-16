@@ -34,8 +34,24 @@ public:
     ofxBiquadFilter1f smallSmileValue;
     ofxBiquadFilter1f bigSmileValue;
     ofxBiquadFilter1f oValue;
+    ofxBiquadFilter1f filteredEyeBrows;
     
     vector<pfunct_type> learned_functions;
     
     ofxOscSender sender;
+    
+    
+    //Gestures
+    enum Gesture {
+        MOUTH_WIDTH, MOUTH_HEIGHT,
+        LEFT_EYEBROW_HEIGHT, RIGHT_EYEBROW_HEIGHT,
+        LEFT_EYE_OPENNESS, RIGHT_EYE_OPENNESS,
+        JAW_OPENNESS,
+        NOSTRIL_FLARE
+    };
+    
+    float getGesture (Gesture gesture);
+    
+    float faceDist;
+    float faceDistMapped;
 };

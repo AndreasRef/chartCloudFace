@@ -15,6 +15,8 @@ void ofApp::setup(){
     bigSmileValue.setFc(0.04);
     smallSmileValue.setFc(0.04);
     oValue.setFc(0.04);
+    filteredEyeBrows.setFc(0.04);
+    
 
     // All examples share data files from example-data, so setting data path to this folder
     // This is only relevant for the example apps
@@ -59,12 +61,34 @@ void ofApp::update(){
             oValue.update(learned_functions[2](makeSample()));
             neutralValue.update(learned_functions[3](makeSample()));
             
-            
             ofxOscMessage m;
             m.setAddress("/smileValues");
             m.addFloatArg(smallSmileValue.value());
             m.addFloatArg(bigSmileValue.value());
             sender.sendMessage(m, false);
+            
+            
+            
+            
+            
+            //All of this should be redone according to normalized values
+            
+            //Gesture
+            faceDist = tracker.getInstances()[0].getPoseMatrix().getRowAsVec3f(3)[2];//Okay measure for distance between -2000, -10000
+            faceDistMapped = ofMap(faceDist, -10000,-2000,0,1);
+            
+            
+            filteredEyeBrows.update( getGesture(RIGHT_EYEBROW_HEIGHT) / (faceDistMapped) + getGesture(LEFT_EYEBROW_HEIGHT) / (faceDistMapped) );
+            
+            
+            //Somewhat decent calculation of dist aware gesture value...
+//            cout << "RIGHT_EYE_OPENNESS: " << getGesture(RIGHT_EYE_OPENNESS) / (faceDistMapped) << "\n" << "\n";
+//            cout << "LEFT_EYE_OPENNESS: " << getGesture(LEFT_EYE_OPENNESS) / (faceDistMapped) << "\n" << "\n" << "\n";
+//
+//            cout << "RIGHT_EYEBROW_HEIGHT: " << getGesture(RIGHT_EYEBROW_HEIGHT) / (faceDistMapped) << "\n" << "\n";
+//            cout << "LEFT_EYEBROW_HEIGHT: " << getGesture(LEFT_EYEBROW_HEIGHT) / (faceDistMapped) << "\n" << "\n" << "\n";
+//
+//            cout << "MOUTH_HEIGHT: " << getGesture(MOUTH_HEIGHT) / (faceDistMapped) << "\n" << "\n" << "\n";
             
         }
     }
@@ -84,7 +108,7 @@ void ofApp::draw(){
     
     ofPushMatrix();
     ofTranslate(0, 100);
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < 5; i++) {
         ofSetColor(255);
         
         string str;
@@ -105,6 +129,10 @@ void ofApp::draw(){
             case 3:
                 str = "NEUTRAL MOUTH";
                 val = neutralValue.value();
+                break;
+            case 4:
+                str = "EYEBROW ADDED";
+                val = filteredEyeBrows.value();
                 break;
         }
         
@@ -160,3 +188,53 @@ sample_type ofApp::makeSample(){
     }
     return s;
 }
+
+
+
+//--------------------------------------------------------------
+float ofApp:: getGesture (Gesture gesture){
+    
+    //Current issues: How to make it scale accordingly
+    
+    
+    if(tracker.size()<1) {
+        return 0;
+    }
+    int start = 0, end = 0;
+    int gestureMultiplier = 10;
+    
+    
+    switch(gesture) {
+            // left to right of mouth
+        case MOUTH_WIDTH: start = 48; end = 54; break;
+            // top to bottom of inner mouth
+        case MOUTH_HEIGHT: start = 51; end = 57; gestureMultiplier = 10; break;
+            // center of the eye to middle of eyebrow
+        case LEFT_EYEBROW_HEIGHT: start = 38; end = 20; gestureMultiplier = 10; break;
+            // center of the eye to middle of eyebrow
+        case RIGHT_EYEBROW_HEIGHT: start = 43; end = 23; gestureMultiplier = 10; break;
+            // upper inner eye to lower outer eye
+        case LEFT_EYE_OPENNESS: start = 38; end = 40; gestureMultiplier = 25; break;
+            // upper inner eye to lower outer eye
+        case RIGHT_EYE_OPENNESS: start = 43; end = 47; gestureMultiplier = 25; break;
+            // nose center to chin center
+        case JAW_OPENNESS: start = 33; end = 8; break;
+            // left side of nose to right side of nose
+        case NOSTRIL_FLARE: start = 31; end = 35; break;
+    }
+    
+    //    return (1000*abs(tracker.getInstances()[0].getLandmarks().getImagePoint(start).getNormalized().x - tracker.getInstances()[0].getLandmarks().getImagePoint(end).getNormalized().x) + abs(tracker.getInstances()[0].getLandmarks().getImagePoint(start).getNormalized().y - tracker.getInstances()[0].getLandmarks().getImagePoint(end).getNormalized().y));
+    
+    
+    //Attempting to only calculate based on either x or y
+    
+    //Normalized
+    
+    return (gestureMultiplier*abs(abs(tracker.getInstances()[0].getLandmarks().getImagePoint(start).getNormalized().y - tracker.getInstances()[0].getLandmarks().getImagePoint(end).getNormalized().y)));
+    
+    //Not normalized
+    //            return 0.01 * abs(tracker.getInstances()[0].getLandmarks().getImagePoint(start).y - tracker.getInstances()[0].getLandmarks().getImagePoint(end).y);
+    
+}
+
+
