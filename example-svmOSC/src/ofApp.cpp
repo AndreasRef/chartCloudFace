@@ -46,6 +46,15 @@ void ofApp::setup(){
     // open an outgoing connection to HOST:PORT
     sender.setup(HOST, PORT);
     
+    
+    //Sound
+    happy.load("sounds/Happy.wav");
+    neutral.load("sounds/Neutral.wav");
+    sad.load("sounds/Worried.wav");
+    happy.setVolume(0.75f);
+    neutral.setVolume(0.75f);
+    sad.setVolume(0.5f);
+    
 }
 
 //--------------------------------------------------------------
@@ -87,14 +96,41 @@ void ofApp::update(){
             filteredEyeBrows.update((getGesture(RIGHT_EYEBROW_HEIGHT) + getGesture(LEFT_EYEBROW_HEIGHT) + getGesture(RIGHT_EYE_OPENNESS) + getGesture(LEFT_EYE_OPENNESS)) / faceDistMapped ); //Also add eyes
             //filteredEyeBrows.update( getGesture(RIGHT_EYEBROW_HEIGHT) / (faceDistMapped) + getGesture(LEFT_EYEBROW_HEIGHT) / (faceDistMapped) );
         //filteredEyeBrows.update( getGesture(RIGHT_EYEBROW_HEIGHT) + getGesture(LEFT_EYEBROW_HEIGHT));
-            
+        
     }
+    
+    ofSoundUpdate();
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
     grabber.draw(0, 0);
+    
+    
+    
+    
+    
+    //Quick & Dirty emotion prototype
+    
+    
+    if (neutralValue.value() > 0.3 )  {
+        ofSetColor(0,0,255); //neutral: blue
+        emotion = "neutral";
+        if (filteredEyeBrows.value() < 0.4) {
+            ofSetColor(255,0,0); //sad: red
+            emotion = "sad";
+        }
+        
+    } else {
+        ofSetColor(0,255,0); //happy: green
+        emotion = "happy";
+    }
+    
+    ofDrawBitmapStringHighlight(emotion, ofGetWidth()/2, 100);
+    
     tracker.drawDebug();
+    
+    ofSetColor(255);
     
 #ifndef __OPTIMIZE__
     ofSetColor(ofColor::Red);
@@ -232,6 +268,18 @@ float ofApp:: getGesture (Gesture gesture){
     //Not normalized
     //            return 0.01 * abs(tracker.getInstances()[0].getLandmarks().getImagePoint(start).y - tracker.getInstances()[0].getLandmarks().getImagePoint(end).y);
     
+}
+
+//--------------------------------------------------------------
+void ofApp::mousePressed(int x, int y, int button){
+    
+    if (emotion == "sad") {
+        sad.play();
+    } else if (emotion == "happy") {
+        happy.play();
+    } else if (emotion == "neutral") {
+        neutral.play();
+    }
 }
 
 

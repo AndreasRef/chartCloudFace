@@ -24,6 +24,7 @@ public:
     void setup();
     void update();
     void draw();
+    void mousePressed(int x, int y, int button);
     
     sample_type makeSample();
     
@@ -54,4 +55,17 @@ public:
     
     float faceDist;
     float faceDistMapped;
+    
+    
+    string emotion;
+    
+    
+    //Sounds
+    
+    ofSoundPlayer  happy;
+    ofSoundPlayer  neutral;
+    ofSoundPlayer  sad;
+    
+    
+    
 };
