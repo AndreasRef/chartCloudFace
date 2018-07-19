@@ -23,6 +23,8 @@ public:
     sample_type makeSample();
     sample_type makeSample2();
     
+    sample_type makeSampleID(int id);
+    
     ofxFaceTracker2 tracker;
     ofVideoGrabber grabber;
     

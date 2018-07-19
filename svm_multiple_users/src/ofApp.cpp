@@ -59,7 +59,7 @@ void ofApp::update(){
         
         
         for (int i = 0; i< tracker.size(); i++) {
-            smallSmileValues[i].update(learned_functions[0](makeSample()));
+            smallSmileValues[i].update(learned_functions[0](makeSampleID(i)));
         }
         
         
@@ -97,11 +97,9 @@ void ofApp::draw(){
     
     
     //New vectorized test
-    
     for (int i = 0; i < tracker.size(); i++) {
         float val = smallSmileValues[i].value();
         ofDrawRectangle(20, 20 + 100*i, 300*val, 30);
-        
     }
     
     
@@ -158,8 +156,43 @@ void ofApp::draw(){
     
 }
 
-
-//To do: Make a vector-ready makeSample function
+// Function that creates a sample for the classifier containing the mouth and eyes
+sample_type ofApp::makeSampleID(int id){
+    auto outer = tracker.getInstances()[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::OUTER_MOUTH);
+    auto inner = tracker.getInstances()[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::INNER_MOUTH);
+    
+    auto lEye = tracker.getInstances()[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::LEFT_EYE);
+    auto rEye = tracker.getInstances()[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::RIGHT_EYE);
+    
+    ofVec2f vec = rEye.getCentroid2D() - lEye.getCentroid2D();
+    float rot = vec.angle(ofVec2f(1,0));
+    
+    vector<ofVec2f> relativeMouthPoints;
+    
+    ofVec2f centroid = outer.getCentroid2D();
+    for(ofVec2f p : outer.getVertices()){
+        p -= centroid;
+        p.rotate(rot);
+        p /= vec.length();
+        
+        relativeMouthPoints.push_back(p);
+    }
+    
+    for(ofVec2f p : inner.getVertices()){
+        p -= centroid;
+        p.rotate(rot);
+        p /= vec.length();
+        
+        relativeMouthPoints.push_back(p);
+    }
+    
+    sample_type s;
+    for(int i=0;i<20;i++){
+        s(i*2+0) = relativeMouthPoints[i].x;
+        s(i*2+1) = relativeMouthPoints[i].y;
+    }
+    return s;
+}
 
 
 
