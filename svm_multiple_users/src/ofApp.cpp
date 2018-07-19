@@ -17,6 +17,15 @@ void ofApp::setup(){
     //    dlib::deserialize(ofToDataPath("data_o.func")) >> learned_functions2[2];
     //    dlib::deserialize(ofToDataPath("data_neutral.func")) >> learned_functions2[3];
     
+    //Static image + video
+    img.load("images/faces.jpg");
+    img.resize(ofGetWidth(),ofGetHeight());
+    video.load("videos/trump_short.mp4");
+    video.setLoopState(OF_LOOP_NORMAL);
+    video.setVolume(0);
+    video.play();
+    
+    
     // All examples share data files from example-data, so setting data path to this folder
     // This is only relevant for the example apps
     ofSetDataPathRoot(ofFile(__BASE_FILE__).getEnclosingDirectory()+"../../model/");
@@ -37,13 +46,21 @@ void ofApp::setup(){
         bigSmileValues[i].setFc(0.04);
     }
     
+    
+
+    
+    
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
     grabber.update();
+    //video.update();
+    //tracker.update(video);
+    
     if(grabber.isFrameNew()){
         tracker.update(grabber);
+        
         
         vector<ofxFaceTracker2Instance> instances = tracker.getInstances();
         if (instances.size() == 0) {
@@ -93,6 +110,7 @@ void ofApp::update(){
 //--------------------------------------------------------------
 void ofApp::draw(){
     grabber.draw(0, 0);
+    //video.draw(0,0);
     tracker.drawDebug();
     
 #ifndef __OPTIMIZE__

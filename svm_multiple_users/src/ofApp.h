@@ -22,10 +22,17 @@ public:
     
     ofxFaceTracker2 tracker;
     ofVideoGrabber grabber;
-
+    
+    //Static image + video
+    ofImage img;
+    ofVideoPlayer video;
+    
+    
+    //SmileSVM
     sample_type makeSampleID(int id);
     vector<pfunct_type> learned_functions;
     vector<ofxBiquadFilter1f> smallSmileValues;
     vector<ofxBiquadFilter1f> bigSmileValues;
+    
     
 };
