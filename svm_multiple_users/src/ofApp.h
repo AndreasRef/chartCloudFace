@@ -20,24 +20,11 @@ public:
     void update();
     void draw();
     
-    sample_type makeSample();
-    sample_type makeSample2();
-    
-    sample_type makeSampleID(int id);
-    
     ofxFaceTracker2 tracker;
     ofVideoGrabber grabber;
-    
-    ofxBiquadFilter1f smallSmileValue;
-    ofxBiquadFilter1f smallSmileValue2;
-    
+
+    sample_type makeSampleID(int id);
     vector<pfunct_type> learned_functions;
-    vector<pfunct_type> learned_functions2;
-    
-    
-    //As vectors
-    vector<sample_type> makeSamples;
     vector<ofxBiquadFilter1f> smallSmileValues;
-    vector<vector<pfunct_type>> learned_functions_vector;
     
 };
