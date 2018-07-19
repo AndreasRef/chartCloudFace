@@ -27,9 +27,15 @@ public:
     ofVideoGrabber grabber;
     
     ofxBiquadFilter1f smallSmileValue;
-    
     ofxBiquadFilter1f smallSmileValue2;
     
     vector<pfunct_type> learned_functions;
     vector<pfunct_type> learned_functions2;
+    
+    
+    //As vectors
+    vector<sample_type> makeSamples;
+    vector<ofxBiquadFilter1f> smallSmileValues;
+    vector<vector<pfunct_type>> learned_functions_vector;
+    
 };

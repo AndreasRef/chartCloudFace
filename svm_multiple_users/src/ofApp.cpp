@@ -32,6 +32,18 @@ void ofApp::setup(){
     
     // Setup tracker
     tracker.setup();
+    
+    
+    
+    //Vector test
+    makeSamples.resize(2);
+    smallSmileValues.resize(2);
+    learned_functions_vector.resize(2);
+    
+    for (int i = 0; i<smallSmileValues.size();i++) {
+        smallSmileValues[i].setFc(0.04);
+    }
+    
 }
 
 //--------------------------------------------------------------
@@ -40,6 +52,18 @@ void ofApp::update(){
     if(grabber.isFrameNew()){
         tracker.update(grabber);
         
+        vector<ofxFaceTracker2Instance> instances = tracker.getInstances();
+        if (instances.size() == 0) {
+            return;
+        }
+        
+        
+        for (int i = 0; i< tracker.size(); i++) {
+            smallSmileValues[i].update(learned_functions[0](makeSample()));
+        }
+        
+        
+      /*
         if(tracker.size() > 1){
             // Run the classifiers and update the filters
             
@@ -56,6 +80,7 @@ void ofApp::update(){
             //cout << centerFacePos2 << endl;
             
         }
+       */
     }
 }
 
@@ -71,11 +96,22 @@ void ofApp::draw(){
 #endif
     
     
+    //New vectorized test
+    
+    for (int i = 0; i < tracker.size(); i++) {
+        float val = smallSmileValues[i].value();
+        ofDrawRectangle(20, 20 + 100*i, 300*val, 30);
+        
+    }
+    
+    
+    
+    /*
+    // old test
     ofPushMatrix();
     ofTranslate(0, 100);
     for (int i = 0; i < 1; i++) {
         ofSetColor(255);
-        
         string str;
         float val;
         switch (i) {
@@ -117,7 +153,14 @@ void ofApp::draw(){
         ofFill();
     }
     ofPopMatrix();
+    
+    */
+    
 }
+
+
+//To do: Make a vector-ready makeSample function
+
 
 
 // Function that creates a sample for the classifier containing the mouth and eyes
