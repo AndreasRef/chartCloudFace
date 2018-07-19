@@ -50,16 +50,42 @@ void ofApp::update(){
             return;
         }
         
-        //bigSmileValues.resize(tracker.size());
-        //smallSmileValues.resize(tracker.size());
-        
         for (int i = 0; i< tracker.size(); i++) {
+        
+            //FACEPOSE CALCULATIONS START
+            // initialize variables for pose decomposition
+            ofVec3f scale, transition;
+            ofQuaternion rotation, orientation;
             
-            //smallSmileValues[i].setFc(0.04);
-            //bigSmileValues[i].setFc(0.04);
+            // get pose matrix
+            ofMatrix4x4 p = instances[i].getPoseMatrix();
             
-            bigSmileValues[i].update(learned_functions[0](makeSampleID(i)));
-            smallSmileValues[i].update(learned_functions[1](makeSampleID(i)));
+            // decompose the modelview
+            ofMatrix4x4(p).decompose(transition, rotation, scale, orientation);
+            
+            ofPushView();
+            ofPushMatrix();
+            
+            // obtain pitch, roll, yaw
+            double pitch =
+            atan2(2*(rotation.y()*rotation.z()+rotation.w()*rotation.x()),rotation.w()*rotation.w()-rotation.x()*rotation.x()-rotation.y()*rotation.y()+rotation.z()*rotation.z());
+            double roll =
+            atan2(2*(rotation.x()*rotation.y()+rotation.w()*rotation.z()),rotation.w()*rotation.w()+rotation.x()*rotation.x()-rotation.y()*rotation.y()-rotation.z()*rotation.z());
+            double yaw =
+            asin(-2*(rotation.x()*rotation.z()-rotation.w()*rotation.y()));
+            
+            
+            ofLog()<<"pitch "<<pitch; //pitch is a good indicator of facing up/down
+            ofLog()<<"roll "<<roll;
+            ofLog()<<"yaw "<<yaw; //yaw is a good indicator of facing sideways
+            
+            ofPopMatrix();
+            ofPopView();
+            //FACEPOSE CALCULATIONS END
+            
+            
+            bigSmileValues[i].update(ofClamp(learned_functions[0](makeSampleID(i))*1.2-abs(yaw)+MIN(0,pitch)*1,0, 1));
+            smallSmileValues[i].update(ofClamp(learned_functions[1](makeSampleID(i))*1.2-abs(yaw)+MIN(0,pitch)*1,0, 1));
         }
     }
 }
