@@ -26,5 +26,6 @@ public:
     sample_type makeSampleID(int id);
     vector<pfunct_type> learned_functions;
     vector<ofxBiquadFilter1f> smallSmileValues;
+    vector<ofxBiquadFilter1f> bigSmileValues;
     
 };

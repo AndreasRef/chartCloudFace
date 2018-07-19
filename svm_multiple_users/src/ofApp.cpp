@@ -5,15 +5,15 @@ void ofApp::setup(){
     learned_functions = vector<pfunct_type>(4);
     // Load SVM data model
     
-    dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions[0];
+    //dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions[0];
     //dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions2[0];
     //    dlib::deserialize(ofToDataPath("data_ecstatic_smile.func")) >> learned_functions[0];
     //    dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions[1];
     //    dlib::deserialize(ofToDataPath("data_o.func")) >> learned_functions[2];
     //    dlib::deserialize(ofToDataPath("data_neutral.func")) >> learned_functions[3];
     //
-    //    dlib::deserialize(ofToDataPath("data_ecstatic_smile.func")) >> learned_functions2[0];
-    //    dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions2[1];
+        dlib::deserialize(ofToDataPath("data_ecstatic_smile.func")) >> learned_functions[0];
+        dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions[1];
     //    dlib::deserialize(ofToDataPath("data_o.func")) >> learned_functions2[2];
     //    dlib::deserialize(ofToDataPath("data_neutral.func")) >> learned_functions2[3];
     
@@ -28,10 +28,13 @@ void ofApp::setup(){
     tracker.setup();
     
     
-    smallSmileValues.resize(2);
+    //Have up to 100 faces at a time
+    bigSmileValues.resize(100);
+    smallSmileValues.resize(100);
     
     for (int i = 0; i<smallSmileValues.size();i++) {
         smallSmileValues[i].setFc(0.04);
+        bigSmileValues[i].setFc(0.04);
     }
     
 }
@@ -47,9 +50,16 @@ void ofApp::update(){
             return;
         }
         
+        //bigSmileValues.resize(tracker.size());
+        //smallSmileValues.resize(tracker.size());
         
         for (int i = 0; i< tracker.size(); i++) {
-            smallSmileValues[i].update(learned_functions[0](makeSampleID(i)));
+            
+            //smallSmileValues[i].setFc(0.04);
+            //bigSmileValues[i].setFc(0.04);
+            
+            bigSmileValues[i].update(learned_functions[0](makeSampleID(i)));
+            smallSmileValues[i].update(learned_functions[1](makeSampleID(i)));
         }
     }
 }
@@ -68,8 +78,19 @@ void ofApp::draw(){
     
     //New vectorized test
     for (int i = 0; i < tracker.size(); i++) {
-        float val = smallSmileValues[i].value();
-        ofDrawRectangle(20, 20 + 100*i, 300*val, 30);
+        
+        ofRectangle bb = tracker.getInstances()[i].getBoundingBox();
+        
+        float val = smallSmileValues[i].value() + bigSmileValues[i].value();
+        //ofDrawRectangle(20, 20 + 100*i, 300*val, 30);
+        
+        ofDrawBitmapStringHighlight("smile", bb.x, bb.y -10 );
+        ofDrawRectangle(bb.x + 50, bb.y - 25, 100*val, 20);
+        
+        ofNoFill();
+        ofDrawRectangle(bb.x + 50, bb.y - 25, 100, 20);
+        ofFill();
+        
     }
     
 }
