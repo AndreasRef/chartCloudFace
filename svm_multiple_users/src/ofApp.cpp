@@ -5,9 +5,8 @@ using namespace cv;
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    learned_functions = vector<pfunct_type>(4);
+    learned_functions = vector<pfunct_type>(2);
     // Load SVM data model
-    
     dlib::deserialize(ofToDataPath("data_ecstatic_smile.func")) >> learned_functions[0];
     dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions[1];
     
@@ -41,6 +40,12 @@ void ofApp::setup(){
         smallSmileValues[i].setFc(0.04);
         bigSmileValues[i].setFc(0.04);
     }
+    
+    //GUI
+    gui.setup();
+    gui.add(claheFilter.setup("CLAHE", true));
+    gui.add(clipLimit.setup("clipLimit", 1, 0, 30));
+
 }
 
 //--------------------------------------------------------------
@@ -51,6 +56,7 @@ void ofApp::update(){
     
     if(grabber.isFrameNew()){
         
+        if (claheFilter) { //GUI claheFilter
         //CLAHE
         cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
         clahe->setClipLimit(clipLimit);
@@ -64,17 +70,26 @@ void ofApp::update(){
         // convert to ofImage
         ofxCv::toOf(claheImg, outputImage);
         outputImage.update();
-        
-        
-        
-        //tracker.update(grabber);
         tracker.update(outputImage);
-        
+        } else {
+        tracker.update(grabber);
+        }
         
         vector<ofxFaceTracker2Instance> instances = tracker.getInstances();
         if (instances.size() == 0) {
+            varMood = 0;
+            avgMood = 0;
             return;
         }
+        
+        
+        //Calculate stuff for music demo: nPersons - average mood - variation between moods
+        avgMood = 0;
+        varMood = 0;
+        
+        float minMood = 1.0;
+        float maxMood = 0.0;
+        
         
         for (int i = 0; i< tracker.size(); i++) {
             
@@ -110,21 +125,51 @@ void ofApp::update(){
             
             bigSmileValues[i].update(ofClamp(learned_functions[0](makeSampleID(i))*1.2-abs(yaw)+MIN(0,pitch)*1,0, 1));
             smallSmileValues[i].update(ofClamp(learned_functions[1](makeSampleID(i))*1.2-abs(yaw)+MIN(0,pitch)*1,0, 1));
+            
+            //Calculate stuff for music demo
+            float currentMood = smallSmileValues[i].value() + bigSmileValues[i].value();
+            
+            avgMood+= currentMood;
+            
+            
+            if (currentMood >= maxMood) {
+                maxMood = currentMood;
+            }
+            
+            if (currentMood <= minMood ) {
+                minMood = currentMood;
+            }
+            
         }
+        
+        varMood = maxMood - minMood;
+        avgMood = avgMood/tracker.size();
+        
+        //Quick rounding
+        varMood =  ofClamp(roundf(varMood * 100) / 100, 0, 1);
+        avgMood =  ofClamp(roundf(avgMood * 100) / 100, 0, 1);
+        
+        
+        //cout << varMood << endl;
     }
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    //grabber.draw(0, 0);
-    outputImage.draw(0,0);
+    if (claheFilter) {
+        outputImage.draw(0,0);
+    } else {
+        grabber.draw(0, 0);
+    }
+    
+    
     //video.draw(0,0);
     tracker.drawDebug();
     
 #ifndef __OPTIMIZE__
-    ofSetColor(ofColor::Red);
+    ofSetColor(ofColor::red);
     ofDrawBitmapString("Warning! Run this app in release mode to get proper performance!",10,60);
-    ofSetColor(ofColor::White);
+    ofSetColor(ofColor::white);
 #endif
     
     
@@ -145,9 +190,11 @@ void ofApp::draw(){
         
     }
     
-    string info = "Clip Limit " + ofToString(clipLimit) + "\n";
-    ofDrawBitmapStringHighlight(info, ofGetWidth()/2-30, 50);
+    ofDrawBitmapStringHighlight("nPersons: " + ofToString(tracker.size()), 10, 180);
+    ofDrawBitmapStringHighlight("avgMood: " + ofToString(avgMood), 10, 200);
+    ofDrawBitmapStringHighlight("varMood: " + ofToString(varMood), 10, 220);
     
+    gui.draw();
 }
 
 //--------------------------------------------------------------
@@ -192,10 +239,10 @@ sample_type ofApp::makeSampleID(int id){
 //--------------------------------------------------------------
 void ofApp::keyPressed(int key){
     if (key == OF_KEY_UP) {
-        clipLimit ++;
+        //clipLimit ++;
     }
     if (key == OF_KEY_DOWN) {
-        clipLimit --;
+        //clipLimit --;
     }
 }
 

@@ -3,6 +3,7 @@
 #include "ofMain.h"
 #include "ofxFaceTracker2.h"
 #include "ofxBiquadFilter.h"
+#include "ofxGui.h"
 
 typedef dlib::matrix<double,40,1> sample_type;
 typedef dlib::radial_basis_kernel<sample_type> kernel_type;
@@ -25,7 +26,7 @@ public:
     ofVideoGrabber grabber;
     
     //CLAHE local constrast algorithm
-    int clipLimit = 1;
+    //int clipLimit = 1;
     cv::Mat greyImg, labImg, claheImg, tmpImg;
     ofImage outputImage;
     
@@ -41,5 +42,15 @@ public:
     vector<ofxBiquadFilter1f> smallSmileValues;
     vector<ofxBiquadFilter1f> bigSmileValues;
     
+    
+    //ofxGui
+    ofxToggle claheFilter;
+    ofxIntSlider clipLimit;
+    ofxPanel gui;
+    
+    
+    //Calculate stuff for music demo
+    float avgMood;
+    float varMood;
     
 };
