@@ -19,4 +19,7 @@ public:
     
     ofVideoGrabber input;
     ofImage outputImage;
+    
+    ofImage gray;
+    ofImage grayOutputImage;
 };
