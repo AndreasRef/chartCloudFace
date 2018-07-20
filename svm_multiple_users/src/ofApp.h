@@ -1,9 +1,16 @@
 #pragma once
 
+//#define DEFAULT_OSC_DESTINATION "localhost"
+//#define DEFAULT_OSC_ADDRESS "/wek/outputs"
+//#define DEFAULT_OSC_PORT 12000
+//#define DEFAULT_DEVICE_ID 0
+
+
 #include "ofMain.h"
 #include "ofxFaceTracker2.h"
 #include "ofxBiquadFilter.h"
 #include "ofxGui.h"
+#include "ofxOsc.h"
 
 typedef dlib::matrix<double,40,1> sample_type;
 typedef dlib::radial_basis_kernel<sample_type> kernel_type;
@@ -21,6 +28,9 @@ public:
     void update();
     void draw();
     void keyPressed(int key);
+    
+//    void setupOSC();
+//    void sendOSC();
     
     ofxFaceTracker2 tracker;
     ofVideoGrabber grabber;
@@ -52,5 +62,11 @@ public:
     //Calculate stuff for music demo
     float avgMood;
     float varMood;
+    
+    
+    // osc
+    ofxOscSender sender;
+    string oscDestination, oscAddress;
+    int oscPort;
     
 };

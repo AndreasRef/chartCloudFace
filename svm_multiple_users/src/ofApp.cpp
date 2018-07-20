@@ -46,6 +46,10 @@ void ofApp::setup(){
     gui.add(claheFilter.setup("CLAHE", true));
     gui.add(clipLimit.setup("clipLimit", 1, 0, 30));
 
+    
+    //OSC
+    sender.setup("localhost", 12000);
+    
 }
 
 //--------------------------------------------------------------
@@ -149,8 +153,15 @@ void ofApp::update(){
         varMood =  ofClamp(roundf(varMood * 100) / 100, 0, 1);
         avgMood =  ofClamp(roundf(avgMood * 100) / 100, 0, 1);
         
-        
         //cout << varMood << endl;
+        
+        //OSC
+        ofxOscMessage msg;
+        msg.setAddress("/wek/outputs");
+        msg.addFloatArg(tracker.size()/5.0);
+        msg.addFloatArg(avgMood);
+        msg.addFloatArg(varMood);
+        sender.sendMessage(msg, false);
     }
 }
 
