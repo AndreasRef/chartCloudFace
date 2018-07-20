@@ -1,30 +1,24 @@
 #include "ofApp.h"
 
+using namespace ofxCv;
+using namespace cv;
+
 //--------------------------------------------------------------
 void ofApp::setup(){
     learned_functions = vector<pfunct_type>(4);
     // Load SVM data model
     
-    //dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions[0];
-    //dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions2[0];
-    //    dlib::deserialize(ofToDataPath("data_ecstatic_smile.func")) >> learned_functions[0];
-    //    dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions[1];
-    //    dlib::deserialize(ofToDataPath("data_o.func")) >> learned_functions[2];
-    //    dlib::deserialize(ofToDataPath("data_neutral.func")) >> learned_functions[3];
-    //
-        dlib::deserialize(ofToDataPath("data_ecstatic_smile.func")) >> learned_functions[0];
-        dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions[1];
-    //    dlib::deserialize(ofToDataPath("data_o.func")) >> learned_functions2[2];
-    //    dlib::deserialize(ofToDataPath("data_neutral.func")) >> learned_functions2[3];
+    dlib::deserialize(ofToDataPath("data_ecstatic_smile.func")) >> learned_functions[0];
+    dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions[1];
     
     //Static image + video
-    img.load("images/faces.jpg");
-    img.resize(ofGetWidth(),ofGetHeight());
-    video.load("videos/trump_short.mp4");
-    video.setLoopState(OF_LOOP_NORMAL);
-    video.setVolume(0);
-    video.play();
-    
+//    img.load("images/faces.jpg");
+//    img.resize(ofGetWidth(),ofGetHeight());
+//
+//    video.load("videos/trump_short.mp4");
+//    video.setLoopState(OF_LOOP_NORMAL);
+//    video.setVolume(0);
+//    video.play();
     
     // All examples share data files from example-data, so setting data path to this folder
     // This is only relevant for the example apps
@@ -36,6 +30,8 @@ void ofApp::setup(){
     // Setup tracker
     tracker.setup();
     
+    //CLAHE
+    outputImage.allocate(1280, 720, OF_IMAGE_COLOR);
     
     //Have up to 100 faces at a time
     bigSmileValues.resize(100);
@@ -45,11 +41,6 @@ void ofApp::setup(){
         smallSmileValues[i].setFc(0.04);
         bigSmileValues[i].setFc(0.04);
     }
-    
-    
-
-    
-    
 }
 
 //--------------------------------------------------------------
@@ -59,7 +50,25 @@ void ofApp::update(){
     //tracker.update(video);
     
     if(grabber.isFrameNew()){
-        tracker.update(grabber);
+        
+        //CLAHE
+        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+        clahe->setClipLimit(clipLimit);
+        
+        //Grayscale
+        ofxCv::copyGray(grabber, greyImg);
+        
+        // apply the CLAHE algorithm
+        clahe->apply(greyImg,claheImg);
+        
+        // convert to ofImage
+        ofxCv::toOf(claheImg, outputImage);
+        outputImage.update();
+        
+        
+        
+        //tracker.update(grabber);
+        tracker.update(outputImage);
         
         
         vector<ofxFaceTracker2Instance> instances = tracker.getInstances();
@@ -68,7 +77,7 @@ void ofApp::update(){
         }
         
         for (int i = 0; i< tracker.size(); i++) {
-        
+            
             //FACEPOSE CALCULATIONS START
             // initialize variables for pose decomposition
             ofVec3f scale, transition;
@@ -91,15 +100,13 @@ void ofApp::update(){
             double yaw =
             asin(-2*(rotation.x()*rotation.z()-rotation.w()*rotation.y()));
             
-            
-            ofLog()<<"pitch "<<pitch; //pitch is a good indicator of facing up/down
-            ofLog()<<"roll "<<roll;
-            ofLog()<<"yaw "<<yaw; //yaw is a good indicator of facing sideways
+//            ofLog()<<"pitch "<<pitch; //pitch is a good indicator of facing up/down
+//            ofLog()<<"roll "<<roll;
+//            ofLog()<<"yaw "<<yaw; //yaw is a good indicator of facing sideways
             
             ofPopMatrix();
             ofPopView();
             //FACEPOSE CALCULATIONS END
-            
             
             bigSmileValues[i].update(ofClamp(learned_functions[0](makeSampleID(i))*1.2-abs(yaw)+MIN(0,pitch)*1,0, 1));
             smallSmileValues[i].update(ofClamp(learned_functions[1](makeSampleID(i))*1.2-abs(yaw)+MIN(0,pitch)*1,0, 1));
@@ -109,7 +116,8 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    grabber.draw(0, 0);
+    //grabber.draw(0, 0);
+    outputImage.draw(0,0);
     //video.draw(0,0);
     tracker.drawDebug();
     
@@ -136,6 +144,9 @@ void ofApp::draw(){
         ofFill();
         
     }
+    
+    string info = "Clip Limit " + ofToString(clipLimit) + "\n";
+    ofDrawBitmapStringHighlight(info, ofGetWidth()/2-30, 50);
     
 }
 
@@ -177,5 +188,16 @@ sample_type ofApp::makeSampleID(int id){
     }
     return s;
 }
+
+//--------------------------------------------------------------
+void ofApp::keyPressed(int key){
+    if (key == OF_KEY_UP) {
+        clipLimit ++;
+    }
+    if (key == OF_KEY_DOWN) {
+        clipLimit --;
+    }
+}
+
 
 

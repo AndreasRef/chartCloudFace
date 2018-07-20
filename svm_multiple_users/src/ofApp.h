@@ -19,9 +19,16 @@ public:
     void setup();
     void update();
     void draw();
+    void keyPressed(int key);
     
     ofxFaceTracker2 tracker;
     ofVideoGrabber grabber;
+    
+    //CLAHE local constrast algorithm
+    int clipLimit = 1;
+    cv::Mat greyImg, labImg, claheImg, tmpImg;
+    ofImage outputImage;
+    
     
     //Static image + video
     ofImage img;
