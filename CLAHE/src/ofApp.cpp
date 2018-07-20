@@ -22,22 +22,15 @@ void ofApp::update() {
 void ofApp::draw() {
     ofSetColor(255);
     
-    
     int w = input.getWidth();
     int h = input.getHeight();
-//    input.draw(0, 0, w/2, h/2);
-//    outputImage.draw(w/2, 0, w/2, h/2);
-//    gray.draw(w, 0, w/2, h/2);
-//    grayOutputImage.draw(1.5*w, 0, w/2, h/2);
     
     input.draw(0, 0, w, h);
     outputImage.draw(w, 0, w, h);
     gray.draw(0, h, w, h);
     grayOutputImage.draw(w, h, w, h);
     
-    
     //CLAHE
-    
     cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
     clahe->setClipLimit(clipLimit);
     
@@ -51,9 +44,7 @@ void ofApp::draw() {
     ofxCv::toOf(claheImg, grayOutputImage);
     grayOutputImage.update();
     
-    
     //Colors
-    
     // convert the color image to lab color space
     cv::cvtColor(ofxCv::toCv(input), labImg, CV_BGR2Lab);
     
@@ -75,10 +66,7 @@ void ofApp::draw() {
     ofxCv::toOf(claheImg, outputImage);
     outputImage.update();
     
-    
     //Info text
-    
-    
     ofSetColor(0);
     string info = "Clip Limit " + ofToString(clipLimit) + "\n";
     ofDrawBitmapStringHighlight(info, ofGetWidth()/2-30, ofGetHeight()/2);
@@ -98,5 +86,4 @@ void ofApp::keyPressed(int key){
     if (key == OF_KEY_DOWN) {
         clipLimit --;
     }
-    
 }
