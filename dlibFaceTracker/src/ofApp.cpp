@@ -51,15 +51,9 @@ void FaceAugmented::draw() {
     face.noseBridge.draw();
     face.noseTip.draw();
     
-    //Testing how to acces the individual points
-//    for (int i=0; i<face.jaw.size();i++) {
-//        ofPoint p = face.jaw.getPointAtIndexInterpolated(i);
-//        ofFill();
-//        ofDrawCircle(p.x, p.y, 2);
-//    }
-    
+    //How to get all the points? face.landmarks!
     ofDrawCircle(face.leftEyeCenter, 7);
-    ofDrawCircle(face.rightEyeCenter, 7);;
+    ofDrawCircle(face.rightEyeCenter, 7);
     
     // draw label
     ofSetColor(255, 255, 255);
@@ -72,78 +66,10 @@ void FaceAugmented::draw() {
 //--------------------------------------------------------------
 void FaceAugmented::drawNumbers() {
     ofSetColor(255);
+    ofFill();
     
-    int featureNumber = 0;
-    
-    for (int i=0; i<face.leftEye.size();i++) {
-        ofPoint p = face.leftEye.getPointAtIndexInterpolated(i);
-        ofFill();
-        ofDrawBitmapString(ofToString(featureNumber), p.x, p.y);
-        ofDrawCircle(p.x, p.y, 2);
-        featureNumber++;
-    }
-    
-    for (int i=0; i<face.rightEye.size();i++) {
-        ofPoint p = face.rightEye.getPointAtIndexInterpolated(i);
-        ofFill();
-        ofDrawBitmapString(ofToString(featureNumber), p.x, p.y);
-        ofDrawCircle(p.x, p.y, 2);
-        featureNumber++;
-    }
-    
-    for (int i=0; i<face.innerMouth.size();i++) {
-        ofPoint p = face.innerMouth.getPointAtIndexInterpolated(i);
-        ofFill();
-        ofDrawBitmapString(ofToString(featureNumber), p.x, p.y);
-        ofDrawCircle(p.x, p.y, 2);
-        featureNumber++;
-    }
-    
-    for (int i=0; i<face.outerMouth.size();i++) {
-        ofPoint p = face.outerMouth.getPointAtIndexInterpolated(i);
-        ofFill();
-        ofDrawBitmapString(ofToString(featureNumber), p.x, p.y);
-        ofDrawCircle(p.x, p.y, 2);
-        featureNumber++;
-    }
-    
-    for (int i=0; i<face.leftEyebrow.size();i++) {
-        ofPoint p = face.leftEyebrow.getPointAtIndexInterpolated(i);
-        ofFill();
-        ofDrawBitmapString(ofToString(featureNumber), p.x, p.y);
-        ofDrawCircle(p.x, p.y, 2);
-        featureNumber++;
-    }
-    
-    for (int i=0; i<face.rightEyebrow.size();i++) {
-        ofPoint p = face.rightEyebrow.getPointAtIndexInterpolated(i);
-        ofFill();
-        ofDrawBitmapString(ofToString(featureNumber), p.x, p.y);
-        ofDrawCircle(p.x, p.y, 2);
-        featureNumber++;
-    }
-    
-    for (int i=0; i<face.jaw.size();i++) {
-        ofPoint p = face.jaw.getPointAtIndexInterpolated(i);
-        ofFill();
-        ofDrawBitmapString(ofToString(featureNumber), p.x, p.y);
-        ofDrawCircle(p.x, p.y, 2);
-        featureNumber++;
-    }
-    
-    for (int i=0; i<face.noseBridge.size();i++) {
-        ofPoint p = face.noseBridge.getPointAtIndexInterpolated(i);
-        ofFill();
-        ofDrawBitmapString(ofToString(featureNumber), p.x, p.y);
-        ofDrawCircle(p.x, p.y, 2);
-        featureNumber++;
-    }
-    
-    for (int i=0; i<face.noseTip.size();i++) {
-        ofPoint p = face.noseTip.getPointAtIndexInterpolated(i);
-        ofFill();
-        ofDrawBitmapString(ofToString(featureNumber), p.x, p.y);
-        ofDrawCircle(p.x, p.y, 2);
+    for (int i=0; i<face.landmarks.size();i++) {
+        ofDrawBitmapString(ofToString(i), face.landmarks[i].x, face.landmarks[i].y);
     }
 }
 
@@ -187,7 +113,7 @@ void ofApp::draw(){
     vector<FaceAugmented>& facesAugmented = tracker.getFollowers();
     for (auto & face : facesAugmented) {
         face.draw();
-        //face.drawNumbers();
+        face.drawNumbers();
     }
     tracker.draw();
     
