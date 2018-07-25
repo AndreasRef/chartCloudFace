@@ -11,8 +11,8 @@ void ofApp::setup(){
     dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions[1];
     
     //Static image + video
-//    img.load("images/faces.jpg");
-//    img.resize(ofGetWidth(),ofGetHeight());
+    img.load("images/aFull.png");
+   //img.resize(ofGetWidth(),ofGetHeight());
 //
 //    video.load("videos/trump_short.mp4");
 //    video.setLoopState(OF_LOOP_NORMAL);
@@ -57,6 +57,7 @@ void ofApp::update(){
     grabber.update();
     //video.update();
     //tracker.update(video);
+    //tracker.update(img);
     
     if(grabber.isFrameNew()){
         
@@ -174,7 +175,7 @@ void ofApp::draw(){
     }
     
     
-    //video.draw(0,0);
+    //img.draw(0,0);
     tracker.drawDebug();
     
 #ifndef __OPTIMIZE__
