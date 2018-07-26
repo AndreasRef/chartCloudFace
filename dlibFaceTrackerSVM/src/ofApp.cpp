@@ -10,6 +10,8 @@ void FaceAugmented::setup(const Face & track) {
     smooth = cur;
     roi = track.rect;
     face = track;
+    
+    faceLearned_functions = vector<pfunct_type>(4);
 }
 
 void FaceAugmented::update(const Face & track) {
@@ -18,6 +20,9 @@ void FaceAugmented::update(const Face & track) {
     smooth.interpolate(cur, .5);
     all.addVertex(smooth);
     face = track;
+    
+    faceSmileVal = faceLearned_functions[0](faceMakeSample());
+    
 }
 
 void FaceAugmented::setImage(const ofPixels & pixels) {
@@ -60,6 +65,23 @@ void FaceAugmented::draw() {
     ofDrawBitmapString(ofToString(label), cur);
     
     //ofPopStyle();
+    
+    
+    //DRAW SVM values
+    
+    ofDrawBitmapStringHighlight(ofToString(faceSmileVal), cur.x, cur.y);
+    
+    //        string str = "BIG SMILE";
+    //        //float val =  bigSmileValue.value();
+    //        float val =  bigSmileValueNoFilter;
+    //
+    //        ofDrawBitmapStringHighlight(str, 20, 100);
+    //        ofDrawRectangle(20, 120, 300*val, 30);
+    //
+    //        ofNoFill();
+    //        ofDrawRectangle(20, 120, 300, 30);
+    //        ofFill();
+    
 }
 
 
@@ -72,6 +94,22 @@ void FaceAugmented::drawNumbers() {
         ofDrawBitmapString(ofToString(i), face.landmarks[i].x, face.landmarks[i].y);
     }
 }
+
+//--------------------------------------------------------------
+sample_type FaceAugmented::faceMakeSample(){
+    
+    sample_type s;
+    for(int i=0;i<20;i++){
+        s(i*2+0) = ofRandom(-1,1);
+        s(i*2+1) = ofRandom(-1,1);
+        //s(i*2+0) = relativeMouthPoints[i].x;
+        //s(i*2+1) = relativeMouthPoints[i].y;
+    }
+    cout << s << endl;
+    
+    return s;
+}
+
 
 
 //--------------------------------------------------------------
@@ -116,13 +154,14 @@ void ofApp::update(){
         
         
         //SVM test
-        for(int i=0; i < tracker.size(); i++) {
-            if (i==0) bigSmileValue.update(learned_functions[0](makeSample()));
-        }
+//        for(int i=0; i < tracker.size(); i++) {
+//            if (i==0) bigSmileValue.update(learned_functions[0](makeSample()));
+//
+//            //without the filter
+//            if (i==0) bigSmileValueNoFilter = learned_functions[0](makeSample());
+//        }
         
-        cout << tracker.size() << endl;
         //How do I access the points of the face from here?
-        
         //make a function that returns all face landmark points?
         
         
@@ -142,15 +181,16 @@ void ofApp::draw(){
     
     ofDrawBitmapStringHighlight("nFaces: " + ofToString(tracker.size()), 10, 20);
     
-        string str = "BIG SMILE";
-        float val =  bigSmileValue.value();
-    
-        ofDrawBitmapStringHighlight(str, 20, 100);
-        ofDrawRectangle(20, 120, 300*val, 30);
-        
-        ofNoFill();
-        ofDrawRectangle(20, 120, 300, 30);
-        ofFill();
+//        string str = "BIG SMILE";
+//        //float val =  bigSmileValue.value();
+//        float val =  bigSmileValueNoFilter;
+//
+//        ofDrawBitmapStringHighlight(str, 20, 100);
+//        ofDrawRectangle(20, 120, 300*val, 30);
+//
+//        ofNoFill();
+//        ofDrawRectangle(20, 120, 300, 30);
+//        ofFill();
     
 }
 

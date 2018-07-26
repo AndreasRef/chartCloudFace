@@ -32,6 +32,11 @@ public:
     void kill();
     void draw();
     void drawNumbers();
+    
+    float faceSmileVal;
+    sample_type faceMakeSample();
+    vector<pfunct_type> faceLearned_functions;
+    
 };
 
 class ofApp : public ofBaseApp{
@@ -47,6 +52,7 @@ public:
     
     sample_type makeSample();
     ofxBiquadFilter1f bigSmileValue;
+    float bigSmileValueNoFilter;
     vector<pfunct_type> learned_functions;
     
 };
