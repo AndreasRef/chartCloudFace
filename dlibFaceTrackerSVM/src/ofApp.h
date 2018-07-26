@@ -33,6 +33,8 @@ public:
     void draw();
     void drawNumbers();
     
+    vector<ofVec2f> returnLandmarks();
+    
     float faceSmileVal;
     sample_type faceMakeSample();
     vector<pfunct_type> faceLearned_functions;
