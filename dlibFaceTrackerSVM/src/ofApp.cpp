@@ -10,10 +10,6 @@ void FaceAugmented::setup(const Face & track) {
     smooth = cur;
     roi = track.rect;
     face = track;
-    
-    bigSmileValue.setFc(0.04);
-    smallSmileValue.setFc(0.04);
-    
 }
 
 void FaceAugmented::update(const Face & track) {
@@ -78,75 +74,8 @@ void FaceAugmented::drawNumbers() {
 }
 
 
-
-//--------------------------------------------------------------
-// Function that creates a sample for the classifier containing the mouth and eyes
-sample_type FaceAugmented::makeSample(){
-    
-//    auto outer = FaceAugmented[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::OUTER_MOUTH);
-//    auto inner = tracker.getInstances()[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::INNER_MOUTH);
-//
-//    auto lEye = tracker.getInstances()[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::LEFT_EYE);
-//    auto rEye = tracker.getInstances()[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::RIGHT_EYE);
-//
-//
-//
-//    ofVec2f vec = rEye.getCentroid2D() - lEye.getCentroid2D();
-//    float rot = vec.angle(ofVec2f(1,0));
-//
-//    vector<ofVec2f> relativeMouthPoints;
-//
-//    ofVec2f centroid = outer.getCentroid2D();
-//    for(ofVec2f p : outer.getVertices()){
-//        p -= centroid;
-//        p.rotate(rot);
-//        p /= vec.length();
-//
-//        relativeMouthPoints.push_back(p);
-//    }
-//
-//    for(ofVec2f p : inner.getVertices()){
-//        p -= centroid;
-//        p.rotate(rot);
-//        p /= vec.length();
-//
-//        relativeMouthPoints.push_back(p);
-//    }
-//
-    sample_type s;
-//    for(int i=0;i<20;i++){
-//        s(i*2+0) = relativeMouthPoints[i].x;
-//        s(i*2+1) = relativeMouthPoints[i].y;
-//    }
-    
-    
-    
-    for(int i=0;i<20;i++){
-                s(i*2+0) = 0.0;
-                s(i*2+1) = 0.0;
-            }
-    
-    return s;
-}
-
-
-
 //--------------------------------------------------------------
 void ofApp::setup(){
-//    learned_functions = vector<pfunct_type>(2);
-//    // Load SVM data model
-//    dlib::deserialize(ofToDataPath("data_ecstatic_smile.func")) >> learned_functions[0];
-//    dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions[1];
-
-//    //Have up to 100 faces at a time
-//    bigSmileValues.resize(100);
-//    smallSmileValues.resize(100);
-//    
-//    for (int i = 0; i<smallSmileValues.size();i++) {
-//        smallSmileValues[i].setFc(0.04);
-//        bigSmileValues[i].setFc(0.04);
-//    }
-    
     tracker.setup(ofFile(__BASE_FILE__).getEnclosingDirectory()+"../../model/shape_predictor_68_face_landmarks.dat");
     tracker.setSmoothingRate(0.5);
     tracker.setDrawStyle(ofxDLib::lines);
@@ -155,6 +84,15 @@ void ofApp::setup(){
     
     video.setDeviceID(0);
     video.setup(640, 480);
+    
+    learned_functions = vector<pfunct_type>(4);
+    
+    // Load SVM data model
+    dlib::deserialize(ofToDataPath("data_ecstatic_smile.func")) >> learned_functions[0];
+    
+    // Setup value filters for the classifer
+    bigSmileValue.setFc(0.04);
+    
 }
 
 //--------------------------------------------------------------
@@ -165,8 +103,7 @@ void ofApp::update(){
         vector<FaceAugmented>& facesAugmented = tracker.getFollowers();
         for (auto & face : facesAugmented) {
             face.setImage(video.getPixels());
-
-           // face.bigSmileValue.update(learned_functions[0](face.makeSample())); //Getting there, but still giving error.
+            //bigSmileValue.update(learned_functions[0](makeSample(face.landmarks[0].x)));
         }
         // amount of movement regulates smoothing rate
         for(int i=0; i < tracker.size(); i++) {
@@ -176,6 +113,19 @@ void ofApp::update(){
             float smoothingRate = ofMap(length, 0, 10, 0.35, 1);
             tracker.setSmoothingRate(label, smoothingRate);
         }
+        
+        
+        //SVM test
+        for(int i=0; i < tracker.size(); i++) {
+            if (i==0) bigSmileValue.update(learned_functions[0](makeSample()));
+        }
+        
+        cout << tracker.size() << endl;
+        //How do I access the points of the face from here?
+        
+        //make a function that returns all face landmark points?
+        
+        
     }
 }
 
@@ -191,54 +141,30 @@ void ofApp::draw(){
     tracker.draw();
     
     ofDrawBitmapStringHighlight("nFaces: " + ofToString(tracker.size()), 10, 20);
+    
+        string str = "BIG SMILE";
+        float val =  bigSmileValue.value();
+    
+        ofDrawBitmapStringHighlight(str, 20, 100);
+        ofDrawRectangle(20, 120, 300*val, 30);
+        
+        ofNoFill();
+        ofDrawRectangle(20, 120, 300, 30);
+        ofFill();
+    
 }
 
-
-////--------------------------------------------------------------
-//// Function that creates a sample for the classifier containing the mouth and eyes
-//sample_type ofApp::makeSampleID(int id){
-////    auto outer = tracker.getInstances()[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::OUTER_MOUTH);
-////    auto inner = tracker.getInstances()[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::INNER_MOUTH);
-////
-////    auto lEye = tracker.getInstances()[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::LEFT_EYE);
-////    auto rEye = tracker.getInstances()[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::RIGHT_EYE);
-//
-//
-//    auto outer = FaceAugmented[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::OUTER_MOUTH);
-//    auto inner = tracker.getInstances()[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::INNER_MOUTH);
-//
-//    auto lEye = tracker.getInstances()[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::LEFT_EYE);
-//    auto rEye = tracker.getInstances()[id].getLandmarks().getImageFeature(ofxFaceTracker2Landmarks::RIGHT_EYE);
-//
-//
-//
-//    ofVec2f vec = rEye.getCentroid2D() - lEye.getCentroid2D();
-//    float rot = vec.angle(ofVec2f(1,0));
-//
-//    vector<ofVec2f> relativeMouthPoints;
-//
-//    ofVec2f centroid = outer.getCentroid2D();
-//    for(ofVec2f p : outer.getVertices()){
-//        p -= centroid;
-//        p.rotate(rot);
-//        p /= vec.length();
-//
-//        relativeMouthPoints.push_back(p);
-//    }
-//
-//    for(ofVec2f p : inner.getVertices()){
-//        p -= centroid;
-//        p.rotate(rot);
-//        p /= vec.length();
-//
-//        relativeMouthPoints.push_back(p);
-//    }
-//
-//    sample_type s;
-//    for(int i=0;i<20;i++){
-//        s(i*2+0) = relativeMouthPoints[i].x;
-//        s(i*2+1) = relativeMouthPoints[i].y;
-//    }
-//    return s;
-//}
+//--------------------------------------------------------------
+// Function that creates a sample for the classifier containing the mouth and eyes
+sample_type ofApp::makeSample(){
+    
+    sample_type s;
+    for(int i=0;i<20;i++){
+        s(i*2+0) = 0.0;
+        s(i*2+1) = 0.0;
+        //s(i*2+0) = relativeMouthPoints[i].x;
+        //s(i*2+1) = relativeMouthPoints[i].y;
+    }
+    return s;
+}
 

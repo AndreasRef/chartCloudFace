@@ -4,8 +4,6 @@
 #include "FaceTracker.h"
 #include "ofxBiquadFilter.h"
 
-
-//SMILE SVM
 typedef dlib::matrix<double,40,1> sample_type;
 typedef dlib::radial_basis_kernel<sample_type> kernel_type;
 
@@ -34,12 +32,6 @@ public:
     void kill();
     void draw();
     void drawNumbers();
-    
-    sample_type makeSample();
-//    
-    ofxBiquadFilter1f smallSmileValue;
-    ofxBiquadFilter1f bigSmileValue;
-    
 };
 
 class ofApp : public ofBaseApp{
@@ -52,11 +44,9 @@ public:
     ofVideoGrabber video;
     ofxDLib::FaceTrackerFollower<FaceAugmented> tracker;
     
-    vector<pfunct_type> learned_functions;
-
     
-    //Calculate stuff for music demo
-    float avgMood;
-    float varMood;
+    sample_type makeSample();
+    ofxBiquadFilter1f bigSmileValue;
+    vector<pfunct_type> learned_functions;
     
 };
