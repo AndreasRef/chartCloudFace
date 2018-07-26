@@ -21,11 +21,12 @@ protected:
     ofRectangle roi;
     ofVec2f cur, smooth;
     ofPolyline all;
-    ofxDLib::Face face;
+    //ofxDLib::Face face;
     float startedDying;
 public:
     FaceAugmented(){
     };
+    ofxDLib::Face face;
     void setup(const ofxDLib::Face & track);
     void update(const ofxDLib::Face & track);
     void setImage(const ofPixels & pixels);
@@ -34,6 +35,11 @@ public:
     void drawNumbers();
     
     vector<ofVec2f> returnLandmarks();
+    ofPolyline returnInnerMouth();
+    ofPolyline returnOuterMouth();
+    ofPolyline returnLeftEye();
+    ofPolyline returnRightEye();
+    
     
     float faceSmileVal;
     sample_type faceMakeSample();
@@ -51,10 +57,19 @@ public:
     ofVideoGrabber video;
     ofxDLib::FaceTrackerFollower<FaceAugmented> tracker;
     
+    ofxDLib::Face ofAppFace;
+    
     
     sample_type makeSample();
     ofxBiquadFilter1f bigSmileValue;
     float bigSmileValueNoFilter;
     vector<pfunct_type> learned_functions;
+    
+    
+    ofPolyline outer;
+    ofPolyline inner;
+    
+    ofPolyline rEye;
+    ofPolyline lEye;
     
 };
