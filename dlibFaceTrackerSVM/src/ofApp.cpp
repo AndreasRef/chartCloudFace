@@ -241,8 +241,9 @@ void ofApp::update(){
                 
                 //ofAppFace = &face;
                 
-                bigSmileValueNoFilter = learned_functions[0](makeSample());
-                cout << bigSmileValueNoFilter << endl;
+                bigSmileValue.update(learned_functions[0](makeSample()));
+                //bigSmileValueNoFilter = learned_functions[0](makeSample());
+                cout << bigSmileValue.value() << endl;
             }
         }
         // amount of movement regulates smoothing rate
@@ -325,10 +326,11 @@ sample_type ofApp::makeSample(){
         p /= vec.length();
         
         relativeMouthPoints.push_back(p);
+        //cout << p.x << endl;
+        //cout << p.y << endl;
     }
     
     //cout << relativeMouthPoints[0].x << endl;
-    
     
     
     sample_type s;
@@ -337,7 +339,6 @@ sample_type ofApp::makeSample(){
         s(i*2+1) = relativeMouthPoints[i].y;
     }
     return s;
-    
     
     
     //OLD CRAP
