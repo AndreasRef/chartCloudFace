@@ -23,7 +23,23 @@ void ofApp::setup(){
     // This is only relevant for the example apps
     ofSetDataPathRoot(ofFile(__BASE_FILE__).getEnclosingDirectory()+"../../model/");
     
+    
+    
+    //Print out a list of devices
+    vector<ofVideoDevice> devices = grabber.listDevices();
+    
+    for(int i = 0; i < devices.size(); i++){
+        if(devices[i].bAvailable){
+            ofLogNotice() << devices[i].id << ": " << devices[i].deviceName;
+        }else{
+            ofLogNotice() << devices[i].id << ": " << devices[i].deviceName << " - unavailable ";
+        }
+    }
+    
+    
     // Setup grabber
+    grabber.setDeviceID(1);
+    grabber.setDesiredFrameRate(5);
     grabber.setup(1280,720);
     
     // Setup tracker
@@ -37,8 +53,8 @@ void ofApp::setup(){
     smallSmileValues.resize(100);
     
     for (int i = 0; i<smallSmileValues.size();i++) {
-        smallSmileValues[i].setFc(0.04);
-        bigSmileValues[i].setFc(0.04);
+        smallSmileValues[i].setFc(0.1);
+        bigSmileValues[i].setFc(0.1);
     }
     
     //GUI
@@ -207,6 +223,11 @@ void ofApp::draw(){
     ofDrawBitmapStringHighlight("varMood: " + ofToString(varMood), 10, 220);
     
     gui.draw();
+    
+    // Draw frameRates
+    ofDrawBitmapStringHighlight("Framerate : "+ofToString(ofGetFrameRate()), 10, 120);
+    ofDrawBitmapStringHighlight("Tracker thread framerate : "+ofToString(tracker.getThreadFps()), 10, 140);
+    
 }
 
 //--------------------------------------------------------------
