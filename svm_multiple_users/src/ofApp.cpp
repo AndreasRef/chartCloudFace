@@ -24,7 +24,6 @@ void ofApp::setup(){
     ofSetDataPathRoot(ofFile(__BASE_FILE__).getEnclosingDirectory()+"../../model/");
     
     
-    
     //Print out a list of devices
     vector<ofVideoDevice> devices = grabber.listDevices();
     
@@ -36,14 +35,15 @@ void ofApp::setup(){
         }
     }
     
-    
     // Setup grabber
     grabber.setDeviceID(1);
-    grabber.setDesiredFrameRate(5);
+    grabber.setDesiredFrameRate(10);
     grabber.setup(1280,720);
     
     // Setup tracker
+    tracker.faceDetectorImageSize = 640*480;
     tracker.setup();
+    
     
     //CLAHE
     outputImage.allocate(1280, 720, OF_IMAGE_COLOR);
