@@ -10,8 +10,6 @@ void FaceAugmented::setup(const Face & track) {
     smooth = cur;
     roi = track.rect;
     face = track;
-    
-    faceLearned_functions = vector<pfunct_type>(4);
 }
 
 void FaceAugmented::update(const Face & track) {
@@ -21,18 +19,6 @@ void FaceAugmented::update(const Face & track) {
     all.addVertex(smooth);
     face = track;
     
-//    outer = face.outerMouth;
-//    inner = face.innerMouth;
-//    rEye = face.rightEye;
-//    lEye = face.leftEye;
-//
-//    ofPolyline rEye;
-//    ofPolyline lEye;
-//
-    
-    
-    //faceSmileVal = faceLearned_functions[0](faceMakeSample());
-    //cout << faceSmileVal << endl;
 }
 
 void FaceAugmented::setImage(const ofPixels & pixels) {
@@ -73,22 +59,6 @@ void FaceAugmented::draw() {
     // draw label
     ofSetColor(255, 255, 255);
     ofDrawBitmapString(ofToString(label), cur);
-    
-    //ofPopStyle();
-    
-    //DRAW SVM values
-    //ofDrawBitmapStringHighlight(ofToString(faceSmileVal), cur.x, cur.y);
-    
-    //        string str = "BIG SMILE";
-    //        //float val =  bigSmileValue.value();
-    //        float val =  bigSmileValueNoFilter;
-    //
-    //        ofDrawBitmapStringHighlight(str, 20, 100);
-    //        ofDrawRectangle(20, 120, 300*val, 30);
-    //
-    //        ofNoFill();
-    //        ofDrawRectangle(20, 120, 300, 30);
-    //        ofFill();
     
 }
 
@@ -140,57 +110,6 @@ ofPolyline FaceAugmented::returnLeftEye() {
 }
 
 
-//--------------------------------------------------------------
-sample_type FaceAugmented::faceMakeSample(){
-    
-    
-    //Attempts to replicate original example-svm function
-    
-//    auto outer = face.outerMouth;
-//    auto inner = face.innerMouth;
-//
-//    auto lEye = face.leftEye;
-//    auto rEye = face.rightEye;
-//
-//    ofVec2f vec = rEye.getCentroid2D() - lEye.getCentroid2D();
-//    float rot = vec.angle(ofVec2f(1,0));
-//
-//    vector<ofVec2f> relativeMouthPoints;
-//
-//    ofVec2f centroid = outer.getCentroid2D();
-//    for(ofVec2f p : outer.getVertices()){
-//        p -= centroid;
-//        p.rotate(rot);
-//        p /= vec.length();
-//
-//        relativeMouthPoints.push_back(p);
-//    }
-//
-//    for(ofVec2f p : inner.getVertices()){
-//        p -= centroid;
-//        p.rotate(rot);
-//        p /= vec.length();
-//
-//        relativeMouthPoints.push_back(p);
-//    }
-//
-//
-//    //cout << relativeMouthPoints[0].x << endl;
-//
-//    sample_type s;
-//    for(int i=0;i<20;i++){
-//        //s(i*2+0) = ofRandom(-1,1);
-//        //s(i*2+1) = ofRandom(-1,1);
-//        //s(i*2+0) = 0.0;
-//        //s(i*2+1) = 0.0;
-//        s(i*2+0) = relativeMouthPoints[i].x;
-//        s(i*2+1) = relativeMouthPoints[i].y;
-//    }
-    
-    //return s;
-}
-
-
 
 //--------------------------------------------------------------
 void ofApp::setup(){
@@ -222,15 +141,6 @@ void ofApp::update(){
         for (auto & face : facesAugmented) {
             face.setImage(video.getPixels());
             
-            
-            //cout << face.returnInnerMouth().getVertices()[0].x << endl;;
-            
-            //float whatever = face.returnLandmarks()[0].x;
-            //cout << whatever << endl;
-            //bigSmileValue.update(learned_functions[0](makeSample(face.landmarks[0].x)));
-            
-            //cout << face.inner[0].x << endl;
-            
             if (tracker.size() == 1 ) {
                 
                 inner = face.returnInnerMouth();
@@ -238,9 +148,6 @@ void ofApp::update(){
                 lEye = face.returnLeftEye();
                 rEye = face.returnRightEye();
 
-                
-                //ofAppFace = &face;
-                
                 bigSmileValue.update(learned_functions[0](makeSample()));
                 //bigSmileValueNoFilter = learned_functions[0](makeSample());
                 cout << bigSmileValue.value() << endl;
@@ -254,24 +161,6 @@ void ofApp::update(){
             float smoothingRate = ofMap(length, 0, 10, 0.35, 1);
             tracker.setSmoothingRate(label, smoothingRate);
         }
-        
-        
-        //SVM test
-//        for(int i=0; i < tracker.size(); i++) {
-//            if (i==0) bigSmileValue.update(learned_functions[0](makeSample()));
-//
-//            //without the filter
-//            if (i==0) bigSmileValueNoFilter = learned_functions[0](makeSample());
-//        }
-        
-        //bigSmileValueNoFilter = learned_functions[0](makeSample());
-        
-        //cout << bigSmileValueNoFilter << endl;
-        
-        //How do I access the points of the face from here?
-        //make a function that returns all face landmark points?
-        
-        
     }
 }
 
@@ -287,17 +176,6 @@ void ofApp::draw(){
     tracker.draw();
     
     ofDrawBitmapStringHighlight("nFaces: " + ofToString(tracker.size()), 10, 20);
-    
-//        string str = "BIG SMILE";
-//        //float val =  bigSmileValue.value();
-//        float val =  bigSmileValueNoFilter;
-//
-//        ofDrawBitmapStringHighlight(str, 20, 100);
-//        ofDrawRectangle(20, 120, 300*val, 30);
-//
-//        ofNoFill();
-//        ofDrawRectangle(20, 120, 300, 30);
-//        ofFill();
     
 }
 
@@ -340,159 +218,5 @@ sample_type ofApp::makeSample(){
     }
     return s;
     
-    
-    //OLD CRAP
-    
-//    ofVec2f vec = currentFace.rEye.getCentroid2D() - currentFace.lEye.getCentroid2D();
-//    float rot = vec.angle(ofVec2f(1,0));
-//
-//    vector<ofVec2f> relativeMouthPoints;
-//
-//        ofVec2f centroid = currentFace.outer.getCentroid2D();
-//        for(ofVec2f p : currentFace.outer.getVertices()){
-//            p -= centroid;
-//            p.rotate(rot);
-//            p /= vec.length();
-//
-//            relativeMouthPoints.push_back(p);
-//        }
-//
-//        for(ofVec2f p : currentFace.inner.getVertices()){
-//            p -= centroid;
-//            p.rotate(rot);
-//            p /= vec.length();
-//
-//            relativeMouthPoints.push_back(p);
-//        }
-//
-//    //cout << relativeMouthPoints[0].x << endl;
-//
-//    sample_type s;
-//        for(int i=0;i<20;i++){
-//            s(i*2+0) = relativeMouthPoints[i].x;
-//            s(i*2+1) = relativeMouthPoints[i].y;
-//        }
-    
-    
-    //currentFace
-    
-    //auto outer = currentFace.outerMouth;
-    
-//    auto inner = face.innerMouth;
-//
-//    auto lEye = face.leftEye;
-//    auto rEye = face.rightEye;
-//
-//    ofVec2f vec = rEye.getCentroid2D() - lEye.getCentroid2D();
-//    float rot = vec.angle(ofVec2f(1,0));
-//
-//    vector<ofVec2f> relativeMouthPoints;
-//
-//    ofVec2f centroid = outer.getCentroid2D();
-//    for(ofVec2f p : outer.getVertices()){
-//        p -= centroid;
-//        p.rotate(rot);
-//        p /= vec.length();
-//
-//        relativeMouthPoints.push_back(p);
-//    }
-//
-//    for(ofVec2f p : inner.getVertices()){
-//        p -= centroid;
-//        p.rotate(rot);
-//        p /= vec.length();
-//
-//        relativeMouthPoints.push_back(p);
-//    }
-//
-//
-//    cout << relativeMouthPoints[0].x << endl;
-//
-//    sample_type s;
-//    for(int i=0;i<20;i++){
-//        //s(i*2+0) = ofRandom(-1,1);
-//        //s(i*2+1) = ofRandom(-1,1);
-        //s(i*2+0) = 0.0;
-        //s(i*2+1) = 0.0;
-//        s(i*2+0) = relativeMouthPoints[i].x;
-//        s(i*2+1) = relativeMouthPoints[i].y;
-//    }
-    
-    
-    
-    
-    
-//    sample_type s;
-//    for(int i=0;i<20;i++){
-//        //s(i*2+0) = 0.0;
-//        //s(i*2+1) = 0.0;
-//
-//        s(0) = -0.376373;
-//        s(1) = 0.0109848;
-//
-//        s(2) = -0.288482;
-//        s(3) = -0.0857038;
-//
-//        s(4) = -0.156153;
-//        s(5) = -0.112567;
-//
-//        s(6) = -0.011125;
-//        s(7) = -0.0886462;
-//
-//        s(8) = 0.11095;
-//        s(9) = -0.11502;
-//
-//        s(10) = 0.256956;
-//        s(11) = -0.070591;
-//
-//        s(12) = 0.416148;
-//        s(13) = 0.0348758;
-//
-//        s(14) = 0.254033;
-//        s(15) = 0.0837137;
-//
-//        s(16) = 0.11096;
-//        s(17) = 0.100811;
-//
-//        s(18) = -0.0326015;
-//        s(19) = 0.107654;
-//
-//        s(20) = -0.166886;
-//        s(21) = 0.0934989;
-//
-//        s(22) = -0.291405;
-//        s(23) = 0.068601;
-//
-//        s(24) = -0.325101;
-//        s(25) = 0.0085409;
-//
-//        s(26) = -0.152243;
-//        s(27) = -0.0305314;
-//
-//        s(28) = -0.017958;
-//        s(29) = -0.0163766;
-//
-//        s(30) = 0.11486;
-//        s(31) = -0.032985;
-//
-//        s(32) = 0.343879;
-//        s(33) = 0.0280428;
-//
-//        s(34) = 0.105584;
-//        s(35) = -0.0119875;
-//
-//        s(36) = -0.0272348;
-//        s(37) = 0.00462095;
-//
-//        s(38) = -0.16152;
-//        s(39) = -0.00953383;
-//
-//
-//
-//
-//        //s(i*2+0) = relativeMouthPoints[i].x;
-//        //s(i*2+1) = relativeMouthPoints[i].y;
-//    }
-//    return s;
 }
 

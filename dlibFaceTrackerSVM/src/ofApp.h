@@ -40,11 +40,6 @@ public:
     ofPolyline returnLeftEye();
     ofPolyline returnRightEye();
     
-    
-    float faceSmileVal;
-    sample_type faceMakeSample();
-    vector<pfunct_type> faceLearned_functions;
-    
 };
 
 class ofApp : public ofBaseApp{
@@ -59,17 +54,14 @@ public:
     
     ofxDLib::Face ofAppFace;
     
-    
     sample_type makeSample();
     ofxBiquadFilter1f bigSmileValue;
     float bigSmileValueNoFilter;
     vector<pfunct_type> learned_functions;
-    
     
     ofPolyline outer;
     ofPolyline inner;
     
     ofPolyline rEye;
     ofPolyline lEye;
-    
 };
