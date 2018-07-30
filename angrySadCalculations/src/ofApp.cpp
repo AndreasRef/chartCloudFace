@@ -40,27 +40,21 @@ void ofApp::update(){
     if(grabber.isFrameNew()){
         tracker.update(grabber);
         
-        
         vector<ofxFaceTracker2Instance> instances = tracker.getInstances();
         if (instances.size() == 0) {
             return;
         }
         
-        
-        //Sloppy eyebrows, should be redone with orientation or perhaps inspired by the stuff that happens in (makeSample)?
-        
-        //Gesture
+        //Old calculations Sloppy eyebrows, should be redone with orientation or perhaps inspired by the stuff that happens in (makeSample)?
         faceDist = tracker.getInstances()[0].getPoseMatrix().getRowAsVec3f(3)[2];//Okay measure for distance between -2000, -10000
         faceDistMapped = ofMap(faceDist, -10000,-2000,0,5);
         
-        float eyeBrowInput = (getGesture(RIGHT_EYEBROW_HEIGHT) + getGesture(LEFT_EYEBROW_HEIGHT) + getGesture(RIGHT_EYE_OPENNESS) + getGesture(LEFT_EYE_OPENNESS)) / 4;
-        
+        float eyeBrowInput = (getGesture(RIGHT_EYEBROW_HEIGHT) + getGesture(LEFT_EYEBROW_HEIGHT) + getGesture(RIGHT_EYE_OPENNESS) + getGesture(LEFT_EYE_OPENNESS)) / faceDistMapped;
         filteredEyeBrows.update(eyeBrowInput); //Also add eyes
-        //filteredEyeBrows.update( getGesture(RIGHT_EYEBROW_HEIGHT) / (faceDistMapped) + getGesture(LEFT_EYEBROW_HEIGHT) / (faceDistMapped) );
-        //filteredEyeBrows.update( getGesture(RIGHT_EYEBROW_HEIGHT) + getGesture(LEFT_EYEBROW_HEIGHT));
+
+        cout << ofToString(getGesture(RIGHT_EYEBROW_HEIGHT)) << endl;
         
     }
-    
 }
 
 //--------------------------------------------------------------
@@ -76,8 +70,6 @@ void ofApp::draw(){
     ofSetColor(ofColor::White);
 #endif
     
-    
-    
     float val = filteredEyeBrows.value();
     string str = "EYEBROW ADDED: " + ofToString(val);
     
@@ -89,7 +81,6 @@ void ofApp::draw(){
     ofNoFill();
     ofDrawRectangle(20, 120, 300, 30);
     
-    
 }
 
 
@@ -98,13 +89,11 @@ float ofApp:: getGesture (Gesture gesture){
     
     //Current issues: How to make it scale accordingly
     
-    
     if(tracker.size()<1) {
         return 0;
     }
     int start = 0, end = 0;
     int gestureMultiplier = 10;
-    
     
     switch(gesture) {
             // left to right of mouth
@@ -127,16 +116,23 @@ float ofApp:: getGesture (Gesture gesture){
     
     //    return (1000*abs(tracker.getInstances()[0].getLandmarks().getImagePoint(start).getNormalized().x - tracker.getInstances()[0].getLandmarks().getImagePoint(end).getNormalized().x) + abs(tracker.getInstances()[0].getLandmarks().getImagePoint(start).getNormalized().y - tracker.getInstances()[0].getLandmarks().getImagePoint(end).getNormalized().y));
     
-    
     //Attempting to only calculate based on either x or y
-    
     //Normalized
+    //float noseCompare = tracker.getInstances()[0].getLandmarks().getImagePoint(33).y - tracker.getInstances()[0].getLandmarks().getImagePoint(30).y;
     
-    return (gestureMultiplier*abs(abs(tracker.getInstances()[0].getLandmarks().getImagePoint(start).getNormalized().y - tracker.getInstances()[0].getLandmarks().getImagePoint(end).getNormalized().y)));
+    
+    float noseCompare = tracker.getInstances()[0].getLandmarks().getImagePoint(33).y - tracker.getInstances()[0].getLandmarks().getImagePoint(27).y;
+    
+    float gestureFloat = abs(tracker.getInstances()[0].getLandmarks().getImagePoint(start).y - tracker.getInstances()[0].getLandmarks().getImagePoint(end).y);
+    
+    //cout << ofToString(noseCompare) << endl;
+    
+    //return (gestureMultiplier*abs(abs(tracker.getInstances()[0].getLandmarks().getImagePoint(start).getNormalized().y - tracker.getInstances()[0].getLandmarks().getImagePoint(end).getNormalized().y)));
+    
+    return (gestureFloat/noseCompare);
     
     //Not normalized
     //            return 0.01 * abs(tracker.getInstances()[0].getLandmarks().getImagePoint(start).y - tracker.getInstances()[0].getLandmarks().getImagePoint(end).y);
-    
 }
 
 
