@@ -27,7 +27,11 @@ public:
     void setup();
     void update();
     void draw();
-    void keyPressed(int key);
+    
+    void trackingResolutionChanged(bool & trackingResolution);
+    void eChangeCamera();
+    
+    
     
 //    void setupOSC();
 //    void sendOSC();
@@ -51,6 +55,15 @@ public:
     vector<pfunct_type> learned_functions;
     vector<ofxBiquadFilter1f> smallSmileValues;
     vector<ofxBiquadFilter1f> bigSmileValues;
+    vector<ofxBiquadFilter1f> eyeBrows;
+    
+    
+    //Gestures for eyes + eyeBrows
+    enum Gesture {
+        LEFT_EYEBROW_HEIGHT, RIGHT_EYEBROW_HEIGHT,
+        LEFT_EYE_OPENNESS, RIGHT_EYE_OPENNESS
+    };
+    float getGesture (Gesture gesture, int id);
     
     
     //ofxGui
@@ -58,6 +71,15 @@ public:
     ofxIntSlider clipLimit;
     ofxPanel gui;
     
+    ofParameter<string>gDeviceId;
+    
+    ofxButton bCameraSettings;
+    
+    ofxToggle trackingResolution;
+    
+    
+    //Moods
+    vector<float> moods;
     
     //Calculate stuff for music demo
     float avgMood;
@@ -68,5 +90,4 @@ public:
     ofxOscSender sender;
     string oscDestination, oscAddress;
     int oscPort;
-    
 };

@@ -11,18 +11,16 @@ void ofApp::setup(){
     dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions[1];
     
     //Static image + video
-    img.load("images/aFull.png");
+   //img.load("images/exp6.jpg");
    //img.resize(ofGetWidth(),ofGetHeight());
 //
-//    video.load("videos/trump_short.mp4");
+//    video.load("videos/femaleFacialExpressions.mp4");
 //    video.setLoopState(OF_LOOP_NORMAL);
 //    video.setVolume(0);
 //    video.play();
     
-    // All examples share data files from example-data, so setting data path to this folder
-    // This is only relevant for the example apps
+    // Set model path
     ofSetDataPathRoot(ofFile(__BASE_FILE__).getEnclosingDirectory()+"../../model/");
-    
     
     //Print out a list of devices
     vector<ofVideoDevice> devices = grabber.listDevices();
@@ -36,14 +34,14 @@ void ofApp::setup(){
     }
     
     // Setup grabber
-    grabber.setDeviceID(1);
-    grabber.setDesiredFrameRate(10);
+    grabber.setDeviceID(2);
+    grabber.setDesiredFrameRate(25);
     grabber.setup(1280,720);
     
     // Setup tracker
-    tracker.faceDetectorImageSize = 640*480;
+    //tracker.faceDetectorImageSize = 640*360;
+    tracker.faceDetectorImageSize = 1280*720;
     tracker.setup();
-    
     
     //CLAHE
     outputImage.allocate(1280, 720, OF_IMAGE_COLOR);
@@ -51,27 +49,63 @@ void ofApp::setup(){
     //Have up to 100 faces at a time
     bigSmileValues.resize(100);
     smallSmileValues.resize(100);
+    eyeBrows.resize(100);
+    moods.resize(100);
     
     for (int i = 0; i<smallSmileValues.size();i++) {
         smallSmileValues[i].setFc(0.1);
         bigSmileValues[i].setFc(0.1);
+        eyeBrows[i].setFc(0.1);
     }
     
     //GUI
+    trackingResolution.addListener(this, &ofApp::trackingResolutionChanged);
+    bCameraSettings.addListener(this, &ofApp::eChangeCamera);
+    
     gui.setup();
-    gui.add(claheFilter.setup("CLAHE", true));
-    gui.add(clipLimit.setup("clipLimit", 1, 0, 30));
-
+    gui.add(claheFilter.setup("CLAHE contrast enhancer", false));
+    gui.add(clipLimit.setup("CLAHE clipLimit", 10, 0, 30));
+    gui.add(trackingResolution.setup("hi-res tracking", false));
+    gui.add(gDeviceId.set("deviceId", ofToString(0)));
+    gui.add(bCameraSettings.setup("change Camera settings"));
     
     //OSC
     sender.setup("localhost", 12000);
     
 }
 
+
+//--------------------------------------------------------------
+void ofApp::trackingResolutionChanged(bool &hiRes){
+    if (hiRes == false) {
+       tracker.faceDetectorImageSize = 640*360;
+    } else if (hiRes == true) {
+        tracker.faceDetectorImageSize = 960*540;
+    }
+}
+
+//--------------------------------------------------------------
+void ofApp::eChangeCamera() {
+    string msg = "Select camera:";
+    int idx = 0;
+    for (auto d : grabber.listDevices()) {
+        msg += "\n "+ofToString(idx++)+": "+d.deviceName;
+    }
+    string selection = ofSystemTextBoxDialog(msg);
+    if (selection != "") {
+        int newDeviceId = ofToInt(selection);
+        grabber.setDeviceID(newDeviceId);
+        grabber.initGrabber(1280, 720);
+        gDeviceId.set(ofToString(newDeviceId));
+    }
+}
+
+
+
 //--------------------------------------------------------------
 void ofApp::update(){
     grabber.update();
-    //video.update();
+    video.update();
     //tracker.update(video);
     //tracker.update(img);
     
@@ -96,25 +130,23 @@ void ofApp::update(){
         tracker.update(grabber);
         }
         
+        varMood = 0;
+        avgMood = 0;
+        
         vector<ofxFaceTracker2Instance> instances = tracker.getInstances();
         if (instances.size() == 0) {
-            varMood = 0;
-            avgMood = 0;
             return;
         }
         
         
         //Calculate stuff for music demo: nPersons - average mood - variation between moods
-        avgMood = 0;
-        varMood = 0;
-        
         float minMood = 1.0;
         float maxMood = 0.0;
         
         
         for (int i = 0; i< tracker.size(); i++) {
             
-            //FACEPOSE CALCULATIONS START
+            //FACEPOSE CALCULATIONS (needed to compensate for faces facing sideways or too much up/down
             // initialize variables for pose decomposition
             ofVec3f scale, transition;
             ofQuaternion rotation, orientation;
@@ -125,10 +157,8 @@ void ofApp::update(){
             // decompose the modelview
             ofMatrix4x4(p).decompose(transition, rotation, scale, orientation);
             
-            ofPushView();
-            ofPushMatrix();
             
-            // obtain pitch, roll, yaw
+            // obtain pitch, roll, yaw: //pitch is a good indicator of facing up/down // //yaw is a good indicator of facing sideways
             double pitch =
             atan2(2*(rotation.y()*rotation.z()+rotation.w()*rotation.x()),rotation.w()*rotation.w()-rotation.x()*rotation.x()-rotation.y()*rotation.y()+rotation.z()*rotation.z());
             double roll =
@@ -136,29 +166,32 @@ void ofApp::update(){
             double yaw =
             asin(-2*(rotation.x()*rotation.z()-rotation.w()*rotation.y()));
             
-//            ofLog()<<"pitch "<<pitch; //pitch is a good indicator of facing up/down
-//            ofLog()<<"roll "<<roll;
-//            ofLog()<<"yaw "<<yaw; //yaw is a good indicator of facing sideways
             
-            ofPopMatrix();
-            ofPopView();
-            //FACEPOSE CALCULATIONS END
-            
+            //SMILES
             bigSmileValues[i].update(ofClamp(learned_functions[0](makeSampleID(i))*1.2-abs(yaw)+MIN(0,pitch)*1,0, 1));
             smallSmileValues[i].update(ofClamp(learned_functions[1](makeSampleID(i))*1.2-abs(yaw)+MIN(0,pitch)*1,0, 1));
             
-            //Calculate stuff for music demo
-            float currentMood = smallSmileValues[i].value() + bigSmileValues[i].value();
             
-            avgMood+= currentMood;
+            //EYEBROWS + EYES
+            float eyeBrowInput = ((getGesture(RIGHT_EYEBROW_HEIGHT, i) + getGesture(LEFT_EYEBROW_HEIGHT, i) + getGesture(RIGHT_EYE_OPENNESS, i) + getGesture(LEFT_EYE_OPENNESS, i)) -0.8 - pitch*1.5);
+            eyeBrowInput = ofClamp(eyeBrowInput, 0.0, 1.0);
+            eyeBrows[i].update(eyeBrowInput);
+            
+            float currentSmile = (smallSmileValues[i].value() + bigSmileValues[i].value())/2;
+            float currentAngry =  ofClamp(0.5-eyeBrows[i].value()-currentSmile,0,0.5);
             
             
-            if (currentMood >= maxMood) {
-                maxMood = currentMood;
+            //CALCULATE MOODS + MAX, MIN, VAR & AVG
+            moods[i] = 0.5 + currentSmile - currentAngry;
+            
+            avgMood+= moods[i];
+            
+            if (moods[i] >= maxMood) {
+                maxMood = moods[i];
             }
             
-            if (currentMood <= minMood ) {
-                minMood = currentMood;
+            if (moods[i] <= minMood ) {
+                minMood = moods[i];
             }
             
         }
@@ -170,7 +203,7 @@ void ofApp::update(){
         varMood =  ofClamp(roundf(varMood * 100) / 100, 0, 1);
         avgMood =  ofClamp(roundf(avgMood * 100) / 100, 0, 1);
         
-        //cout << varMood << endl;
+        
         
         //OSC
         ofxOscMessage msg;
@@ -190,8 +223,8 @@ void ofApp::draw(){
         grabber.draw(0, 0);
     }
     
-    
     //img.draw(0,0);
+    //video.draw(0,0);
     tracker.drawDebug();
     
 #ifndef __OPTIMIZE__
@@ -200,33 +233,37 @@ void ofApp::draw(){
     ofSetColor(ofColor::white);
 #endif
     
-    
-    //New vectorized test
     for (int i = 0; i < tracker.size(); i++) {
         
         ofRectangle bb = tracker.getInstances()[i].getBoundingBox();
         
-        float val = smallSmileValues[i].value() + bigSmileValues[i].value();
-        //ofDrawRectangle(20, 20 + 100*i, 300*val, 30);
-        
-        ofDrawBitmapStringHighlight("smile", bb.x, bb.y -10 );
-        ofDrawRectangle(bb.x + 50, bb.y - 25, 100*val, 20);
+        //Overall mood
+        ofFill();
+        ofDrawBitmapStringHighlight("mood", bb.x-15, bb.y -10 );
+        ofDrawRectangle(bb.x + 50, bb.y - 25, 100*moods[i], 20);
         
         ofNoFill();
         ofDrawRectangle(bb.x + 50, bb.y - 25, 100, 20);
         ofFill();
-        
+    }
+
+    // Draw framerate
+    ofDrawBitmapStringHighlight("Framerate : "+ofToString(ofGetFrameRate()), 10, 170);
+    ofDrawBitmapStringHighlight("Tracker thread framerate : "+ofToString(tracker.getThreadFps()), 10, 190);
+    
+    // Draw tracker resolution
+    if (trackingResolution == false) {
+        ofDrawBitmapStringHighlight("Tracker resolution: 640x360", 10, 210);
+    } else if (trackingResolution == true) {
+        ofDrawBitmapStringHighlight("Tracker resolution: 960x540", 10, 210);
     }
     
-    ofDrawBitmapStringHighlight("nPersons: " + ofToString(tracker.size()), 10, 180);
-    ofDrawBitmapStringHighlight("avgMood: " + ofToString(avgMood), 10, 200);
-    ofDrawBitmapStringHighlight("varMood: " + ofToString(varMood), 10, 220);
+    // Draw tracking info
+    ofDrawBitmapStringHighlight("nPersons: " + ofToString(tracker.size()), 10, 250);
+    ofDrawBitmapStringHighlight("avgMood: " + ofToString(avgMood), 10, 270);
+    ofDrawBitmapStringHighlight("varMood: " + ofToString(varMood), 10, 290);
     
     gui.draw();
-    
-    // Draw frameRates
-    ofDrawBitmapStringHighlight("Framerate : "+ofToString(ofGetFrameRate()), 10, 120);
-    ofDrawBitmapStringHighlight("Tracker thread framerate : "+ofToString(tracker.getThreadFps()), 10, 140);
     
 }
 
@@ -269,14 +306,51 @@ sample_type ofApp::makeSampleID(int id){
     return s;
 }
 
+
 //--------------------------------------------------------------
-void ofApp::keyPressed(int key){
-    if (key == OF_KEY_UP) {
-        //clipLimit ++;
+float ofApp:: getGesture (Gesture gesture, int id){
+    
+    if(tracker.size()<1) {
+        return 0;
     }
-    if (key == OF_KEY_DOWN) {
-        //clipLimit --;
+    int start = 0, end = 0;
+    float compareFloat = 1.0;
+    
+    switch(gesture) {
+        case LEFT_EYEBROW_HEIGHT: start = 38; end = 20; // center of the eye to middle of eyebrow
+            
+            compareFloat = tracker.getInstances()[id].getLandmarks().getImagePoint(33).y - tracker.getInstances()[id].getLandmarks().getImagePoint(27).y;
+            break;
+            
+            
+        case RIGHT_EYEBROW_HEIGHT: start = 43; end = 23; // center of the eye to middle of eyebrow
+            
+            compareFloat = tracker.getInstances()[id].getLandmarks().getImagePoint(33).y - tracker.getInstances()[id].getLandmarks().getImagePoint(27).y;
+            
+            break;
+            
+        case LEFT_EYE_OPENNESS: start = 38; end = 40; // upper inner eye to lower outer eye
+            compareFloat = ofDist(
+                                  tracker.getInstances()[id].getLandmarks().getImagePoint(36).x,
+                                  tracker.getInstances()[id].getLandmarks().getImagePoint(36).y,
+                                  tracker.getInstances()[id].getLandmarks().getImagePoint(39).x,
+                                  tracker.getInstances()[id].getLandmarks().getImagePoint(39).y
+                                  );
+            break;
+            
+        case RIGHT_EYE_OPENNESS: start = 43; end = 47;// upper inner eye to lower outer eye
+            
+            compareFloat = ofDist(
+                                  tracker.getInstances()[id].getLandmarks().getImagePoint(42).x,
+                                  tracker.getInstances()[id].getLandmarks().getImagePoint(42).y,
+                                  tracker.getInstances()[id].getLandmarks().getImagePoint(45).x,
+                                  tracker.getInstances()[id].getLandmarks().getImagePoint(45).y
+                                  );
+            break;
     }
+    
+    float gestureFloat = abs(tracker.getInstances()[id].getLandmarks().getImagePoint(start).y - tracker.getInstances()[id].getLandmarks().getImagePoint(end).y);
+    return (gestureFloat/compareFloat);
 }
 
 
