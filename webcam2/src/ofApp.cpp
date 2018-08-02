@@ -12,15 +12,6 @@ void ofApp::setup(){
     dlib::deserialize(ofToDataPath("data_ecstatic_smile.func")) >> learned_functions[0];
     dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions[1];
     
-    //Static image + video
-   //img.load("images/exp6.jpg");
-   //img.resize(ofGetWidth(),ofGetHeight());
-//
-//    video.load("videos/femaleFacialExpressions.mp4");
-//    video.setLoopState(OF_LOOP_NORMAL);
-//    video.setVolume(0);
-//    video.play();
-    
     // Set model path
     ofSetDataPathRoot(ofFile(__BASE_FILE__).getEnclosingDirectory()+"../../model/");
     
@@ -35,29 +26,26 @@ void ofApp::setup(){
         }
     }
     
-    // Setup grabber
-//    grabber.setDeviceID(2);
-//    grabber.setDesiredFrameRate(25);
-//    grabber.setup(1280,720);
+    //Setup Grabber //Delete afterwards
+    grabber.setDeviceID(1);
+    grabber.setup(1280,720);
     
     // Setup tracker
-    //tracker.faceDetectorImageSize = 640*360;
-    tracker.faceDetectorImageSize = 1280*720;
+    tracker.faceDetectorImageSize = 640*360;
+    //tracker.faceDetectorImageSize = 1280*720;
     tracker.setup();
     
     //CLAHE
     outputImage.allocate(1280, 720, OF_IMAGE_COLOR);
     
-    //Have up to 100 faces at a time
-    bigSmileValues.resize(100);
-    smallSmileValues.resize(100);
-    eyeBrows.resize(100);
-    moods.resize(100);
+    //Have up to 20 faces at a time
+    bigSmileValues.resize(20);
+    smallSmileValues.resize(20);
+    moods.resize(20);
     
     for (int i = 0; i<smallSmileValues.size();i++) {
-        smallSmileValues[i].setFc(0.1);
-        bigSmileValues[i].setFc(0.1);
-        eyeBrows[i].setFc(0.1);
+        smallSmileValues[i].setFc(0.04);
+        bigSmileValues[i].setFc(0.4);
     }
     
     //GUI
@@ -74,13 +62,8 @@ void ofApp::setup(){
     //OSC
     sender.setup("localhost", 12001);
     
-    
     //Startup text
-    
     startUpText = true;
-    
-    
-    
 }
 
 
@@ -115,9 +98,6 @@ void ofApp::eChangeCamera() {
 //--------------------------------------------------------------
 void ofApp::update(){
     grabber.update();
-    video.update();
-    //tracker.update(video);
-    //tracker.update(img);
     
     if(grabber.isFrameNew()){
         
@@ -145,18 +125,25 @@ void ofApp::update(){
         
         vector<ofxFaceTracker2Instance> instances = tracker.getInstances();
         if (instances.size() == 0) {
+            ofxOscMessage msg;
+            msg.setAddress("/webcam");
+            msg.addIntArg(0);
+            msg.addFloatArg(0.0);
+            msg.addFloatArg(0.0);
+            sender.sendMessage(msg, false);
             return;
         }
         
         
-        //Calculate stuff for music demo: nPersons - average mood - variation between moods
+        //Calculate mood values
         float minMood = 1.0;
         float maxMood = 0.0;
         
         
         for (int i = 0; i< tracker.size(); i++) {
             
-            //FACEPOSE CALCULATIONS (needed to compensate for faces facing sideways or too much up/down
+            //FACEPOSE CALCULATIONS (needed to compensate for faces facing sideways or too much up/down)
+            
             // initialize variables for pose decomposition
             ofVec3f scale, transition;
             ofQuaternion rotation, orientation;
@@ -167,32 +154,20 @@ void ofApp::update(){
             // decompose the modelview
             ofMatrix4x4(p).decompose(transition, rotation, scale, orientation);
             
-            
-            // obtain pitch, roll, yaw: //pitch is a good indicator of facing up/down // //yaw is a good indicator of facing sideways
+            // obtain pitch for facing up/down and yaw for facing sideways
             double pitch =
             atan2(2*(rotation.y()*rotation.z()+rotation.w()*rotation.x()),rotation.w()*rotation.w()-rotation.x()*rotation.x()-rotation.y()*rotation.y()+rotation.z()*rotation.z());
-            double roll =
-            atan2(2*(rotation.x()*rotation.y()+rotation.w()*rotation.z()),rotation.w()*rotation.w()+rotation.x()*rotation.x()-rotation.y()*rotation.y()-rotation.z()*rotation.z());
             double yaw =
             asin(-2*(rotation.x()*rotation.z()-rotation.w()*rotation.y()));
-            
             
             //SMILES
             bigSmileValues[i].update(ofClamp(learned_functions[0](makeSampleID(i))*1.2-abs(yaw)+MIN(0,pitch)*1,0, 1));
             smallSmileValues[i].update(ofClamp(learned_functions[1](makeSampleID(i))*1.2-abs(yaw)+MIN(0,pitch)*1,0, 1));
             
-            
-            //EYEBROWS + EYES
-            float eyeBrowInput = ((getGesture(RIGHT_EYEBROW_HEIGHT, i) + getGesture(LEFT_EYEBROW_HEIGHT, i) + getGesture(RIGHT_EYE_OPENNESS, i) + getGesture(LEFT_EYE_OPENNESS, i)) -0.8 - pitch*1.5);
-            eyeBrowInput = ofClamp(eyeBrowInput, 0.0, 1.0);
-            eyeBrows[i].update(eyeBrowInput);
-            
-            float currentSmile = (smallSmileValues[i].value() + bigSmileValues[i].value())/2;
-            float currentAngry =  ofClamp(0.5-eyeBrows[i].value()-currentSmile,0,0.5);
-            
+            float currentSmile = smallSmileValues[i].value() + bigSmileValues[i].value();
             
             //CALCULATE MOODS + MAX, MIN, VAR & AVG
-            moods[i] = 0.5 + currentSmile - currentAngry;
+            moods[i] = currentSmile;
             
             avgMood+= moods[i];
             
@@ -203,29 +178,20 @@ void ofApp::update(){
             if (moods[i] <= minMood ) {
                 minMood = moods[i];
             }
-            
         }
         
         varMood = maxMood - minMood;
+        
         avgMood = avgMood/tracker.size();
         
-        //Quick rounding
-        varMood =  ofClamp(roundf(varMood * 100) / 100, 0, 1);
-        avgMood =  ofClamp(roundf(avgMood * 100) / 100, 0, 1);
         
-        
-        
-        //OSC
-//        ofxOscMessage msg;
-//        msg.setAddress("/wek/outputs");
-//        msg.addFloatArg(tracker.size()/5.0);
-//        msg.addFloatArg(avgMood);
-//        msg.addFloatArg(varMood);
-//        sender.sendMessage(msg, false);
+        //Rounding to fewer decimals
+        varMood =  ofClamp(roundf(varMood * 100) / 100, 0, 1); //Make sure it never goes negative or above 1
+        avgMood =  ofClamp(roundf(avgMood * 100) / 100, 0.01, 1); //Make sure it never goes negative or above 1
         
         
         ofxOscMessage msg;
-        msg.setAddress("/webcam2");
+        msg.setAddress("/webcam");
         msg.addIntArg(tracker.size());
         msg.addFloatArg(avgMood);
         msg.addFloatArg(varMood);
@@ -241,16 +207,7 @@ void ofApp::draw(){
     } else {
         grabber.draw(0, 0);
     }
-    
-    //img.draw(0,0);
-    //video.draw(0,0);
     tracker.drawDebug();
-    
-#ifndef __OPTIMIZE__
-    ofSetColor(ofColor::red);
-    ofDrawBitmapString("Warning! Run this app in release mode to get proper performance!",10,60);
-    ofSetColor(ofColor::white);
-#endif
     
     for (int i = 0; i < tracker.size(); i++) {
         
@@ -258,7 +215,7 @@ void ofApp::draw(){
         
         //Overall mood
         ofFill();
-        ofDrawBitmapStringHighlight("mood", bb.x-15, bb.y -10 );
+        ofDrawBitmapStringHighlight("smile", bb.x-15, bb.y -10 );
         ofDrawRectangle(bb.x + 50, bb.y - 25, 100*moods[i], 20);
         
         ofNoFill();
@@ -284,8 +241,13 @@ void ofApp::draw(){
     
     gui.draw();
     
-    
     if (startUpText) ofDrawBitmapStringHighlight("select a camera in the gui", ofGetWidth()/2, ofGetHeight()/2);
+    
+#ifndef __OPTIMIZE__
+    ofSetColor(ofColor::red);
+    ofDrawBitmapString("Warning! Run this app in release mode to get proper performance!",10,60);
+    ofSetColor(ofColor::white);
+#endif
 }
 
 //--------------------------------------------------------------
@@ -329,55 +291,15 @@ sample_type ofApp::makeSampleID(int id){
 
 
 //--------------------------------------------------------------
-float ofApp:: getGesture (Gesture gesture, int id){
-    
-    if(tracker.size()<1) {
-        return 0;
-    }
-    int start = 0, end = 0;
-    float compareFloat = 1.0;
-    
-    switch(gesture) {
-        case LEFT_EYEBROW_HEIGHT: start = 38; end = 20; // center of the eye to middle of eyebrow
-            
-            compareFloat = tracker.getInstances()[id].getLandmarks().getImagePoint(33).y - tracker.getInstances()[id].getLandmarks().getImagePoint(27).y;
-            break;
-            
-            
-        case RIGHT_EYEBROW_HEIGHT: start = 43; end = 23; // center of the eye to middle of eyebrow
-            
-            compareFloat = tracker.getInstances()[id].getLandmarks().getImagePoint(33).y - tracker.getInstances()[id].getLandmarks().getImagePoint(27).y;
-            
-            break;
-            
-        case LEFT_EYE_OPENNESS: start = 38; end = 40; // upper inner eye to lower outer eye
-            compareFloat = ofDist(
-                                  tracker.getInstances()[id].getLandmarks().getImagePoint(36).x,
-                                  tracker.getInstances()[id].getLandmarks().getImagePoint(36).y,
-                                  tracker.getInstances()[id].getLandmarks().getImagePoint(39).x,
-                                  tracker.getInstances()[id].getLandmarks().getImagePoint(39).y
-                                  );
-            break;
-            
-        case RIGHT_EYE_OPENNESS: start = 43; end = 47;// upper inner eye to lower outer eye
-            
-            compareFloat = ofDist(
-                                  tracker.getInstances()[id].getLandmarks().getImagePoint(42).x,
-                                  tracker.getInstances()[id].getLandmarks().getImagePoint(42).y,
-                                  tracker.getInstances()[id].getLandmarks().getImagePoint(45).x,
-                                  tracker.getInstances()[id].getLandmarks().getImagePoint(45).y
-                                  );
-            break;
-    }
-    
-    float gestureFloat = abs(tracker.getInstances()[id].getLandmarks().getImagePoint(start).y - tracker.getInstances()[id].getLandmarks().getImagePoint(end).y);
-    return (gestureFloat/compareFloat);
-}
-
-
-//--------------------------------------------------------------
 void ofApp::exit(){
-    //SEND A MESSAGE WHERE EVERYTHING IS SET TO 0
+    
+    ofxOscMessage msg;
+    msg.setAddress("/webcam");
+    msg.addIntArg(0);
+    msg.addFloatArg(0.0);
+    msg.addFloatArg(0.0);
+    sender.sendMessage(msg, false);
+    
 }
 
 
