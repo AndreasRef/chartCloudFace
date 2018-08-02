@@ -9,8 +9,7 @@
 #define WEBCAM1PORT 12000
 #define WEBCAM2PORT 12001
 
-#define WEBCAM1MESSAGE "/webcam1"
-#define WEBCAM2MESSAGE "/webcam2"
+#define WEBCAMMESSAGE "/webcam"
 
 
 class ofApp : public ofBaseApp{
@@ -47,6 +46,8 @@ class ofApp : public ofBaseApp{
     float avgMoodWebcam2;
     float varMoodWebcam2;
     long webcam2Timer;
+    
+    
     
     
 };

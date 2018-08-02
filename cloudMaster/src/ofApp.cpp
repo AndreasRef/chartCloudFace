@@ -4,7 +4,6 @@
 void ofApp::setup(){
     ofSetWindowTitle("master");
     
-    
     receiverWebcam1.setup(WEBCAM1PORT);
     receiverWebcam2.setup(WEBCAM2PORT);
     
@@ -40,18 +39,41 @@ void ofApp::update(){
     
     //Perform calculations
     nFacesTotal = nFacesWebcam1 + nFacesWebcam2;
-    avgMoodTotal = (avgMoodWebcam1+avgMoodWebcam2)/2; //not valid if there are no faces in one of the cams - perhaps total mood summed? Otherwise do logic statements where you check for nFaces == 0
-    varMoodTotal = (varMoodWebcam1+varMoodWebcam2)/2;
     
-    //To do: longTermAvgMoodTotal
+    if (nFacesWebcam1==0) {
+        avgMoodTotal = avgMoodWebcam2;
+        varMoodTotal = varMoodWebcam2;
+    } else if (nFacesWebcam2==0) {
+        avgMoodTotal = avgMoodWebcam1;
+        varMoodTotal = varMoodWebcam1;
+    } else {
+        avgMoodTotal = (avgMoodWebcam1+avgMoodWebcam2)/2;
+        varMoodTotal = (varMoodWebcam1+varMoodWebcam2)/2;
+    }
     
-    //Quick longTermAvgMoodTotal: Lerping
     
-    
+    float previousLongTermMood = longTermAvgMoodTotal; //Variable that contains the previous value of longTermAvgMoodTotal
     
     
     if (ofGetFrameNum() % 30 == 0) { //Stuff we don't need to do all the time
-        longTermAvgMoodTotal = ofLerp(longTermAvgMoodTotal, avgMoodTotal, 0.01);
+        longTermAvgMoodTotal = ofLerp(longTermAvgMoodTotal, avgMoodTotal, 0.01); //Quick longTermAvgMoodTotal: Lerping
+        
+        if (longTermAvgMoodTotal > 0.5 && previousLongTermMood < 0.5) { //If longTermAvgMood goes above 0.5, trigg clips in Ableton
+            cout << "bang happy" << endl;
+            
+            ofxOscMessage abletonMessage;
+            abletonMessage.setAddress("/live/play/scene");
+            abletonMessage.addIntArg(1); //launch scene number
+            senderToAbleton.sendMessage(abletonMessage, false);
+            
+        } else if (longTermAvgMoodTotal < 0.5 && previousLongTermMood > 0.5) { //If longTermAvgMood goes belov 0.5, trigg clips in Ableton
+            cout << "bang sad" << endl;
+            
+            ofxOscMessage abletonMessage;
+            abletonMessage.setAddress("/live/play/scene");
+            abletonMessage.addIntArg(0); //launch scene number
+            senderToAbleton.sendMessage(abletonMessage, false);
+        }
         sendOsc();
     }
     
@@ -101,7 +123,7 @@ void ofApp::draw(){
     ofDrawBitmapString("mood variation: " + ofToString(varMoodTotal), x, y);
     y+=yInc;
     
-    ofDrawBitmapString("long term avg mood: " + ofToString(longTermAvgMoodTotal), x, y);
+    ofDrawBitmapString("long term avg mood: " + ofToString(longTermAvgMoodTotal, 2), x, y);
     
     
     //WEBCAM1 INPUT
@@ -123,7 +145,7 @@ void ofApp::draw(){
     ofDrawBitmapString("port: " + ofToString(WEBCAM1PORT), x, y);
     y+=yInc;
     
-    ofDrawBitmapString("adress: " + ofToString(WEBCAM1MESSAGE), x, y);
+    ofDrawBitmapString("adress: " + ofToString(WEBCAMMESSAGE), x, y);
     
     
     //WEBCAM2 INPUT
@@ -145,7 +167,7 @@ void ofApp::draw(){
     ofDrawBitmapString("port: " + ofToString(WEBCAM2PORT), x, y);
     y+=yInc;
     
-    ofDrawBitmapString("adress: " + ofToString(WEBCAM2MESSAGE), x, y);
+    ofDrawBitmapString("adress: " + ofToString(WEBCAMMESSAGE), x, y);
     
 
     //ABLETON OUTPUT
@@ -161,7 +183,7 @@ void ofApp::draw(){
     ofDrawBitmapString("adress: /live/device (0) (0) (1-4)", x, y);
     y+=yInc;
     
-    ofDrawBitmapString("values: " + ofToString(nFacesTotal) + " " + ofToString(avgMoodTotal) + " " + ofToString(varMoodTotal)  + " " + ofToString(longTermAvgMoodTotal), x, y);
+    ofDrawBitmapString("values: " + ofToString(nFacesTotal) + " " + ofToString(avgMoodTotal) + " " + ofToString(varMoodTotal)  + " " + ofToString(longTermAvgMoodTotal, 2), x, y);
 
     
     //MADMAPPER OUTPUT
@@ -177,10 +199,7 @@ void ofApp::draw(){
     ofDrawBitmapString("adress: /whatever/whatever", x, y);
     y+=yInc;
     
-    ofDrawBitmapString("values: " + ofToString(nFacesTotal) + " " + ofToString(avgMoodTotal) + " " + ofToString(varMoodTotal)  + " " + ofToString(longTermAvgMoodTotal), x, y);
-    
-    
-    
+    ofDrawBitmapString("values: " + ofToString(nFacesTotal) + " " + ofToString(avgMoodTotal) + " " + ofToString(varMoodTotal)  + " " + ofToString(longTermAvgMoodTotal, 2), x, y);
     
     
 }
@@ -201,7 +220,7 @@ void ofApp::recieveOsc(){
         
         
         // check adress
-        if(m.getAddress() == WEBCAM1MESSAGE){
+        if(m.getAddress() == WEBCAMMESSAGE){
             nFacesWebcam1 = m.getArgAsInt(0);
             avgMoodWebcam1 = m.getArgAsFloat(1);
             varMoodWebcam1 = m.getArgAsFloat(2);
@@ -221,11 +240,10 @@ void ofApp::recieveOsc(){
         receiverWebcam2.getNextMessage(m);
         
         // check adress
-        if(m.getAddress() == WEBCAM2MESSAGE){
+        if(m.getAddress() == WEBCAMMESSAGE){
             nFacesWebcam2 = m.getArgAsInt(0);
             avgMoodWebcam2 = m.getArgAsFloat(1);
             varMoodWebcam2 = m.getArgAsFloat(2);
-            
         }
         
         webcam2Timer=0;
@@ -235,33 +253,21 @@ void ofApp::recieveOsc(){
 //--------------------------------------------------------------
 void ofApp::sendOsc(){
     
-    //Send to Ableton
-    
-//    for (int i =0; i < 8; i++) { //Send three messages to control the three first dials on the first device on first track
-//    ofxOscMessage abletonMessage;
-//    abletonMessage.setAddress("/live/device");
-//    abletonMessage.addIntArg(0); //track
-//    abletonMessage.addIntArg(0); //device
-//    abletonMessage.addIntArg(i+1); //parameter - 0 is on/off so start at 1
-//    abletonMessage.addIntArg(sin(ofGetFrameNum()/100.0)*127/2 + 127/2); //value - from 0-127
-//    senderToAbleton.sendMessage(abletonMessage, false);
-//
-//    }
-    
-    //SEV SPECIFIC ABLETON OUTPUTS
+    //Send OSC to Ableton
+    //Generic Ableton Output (control first three values in an instrument rack on first track)
     
     for (int i =0; i < 3; i++) { //Send three messages to control the three first dials on the first device on first track
         ofxOscMessage abletonMessage;
         abletonMessage.setAddress("/live/device");
         abletonMessage.addIntArg(0); //track
         abletonMessage.addIntArg(0); //device
-        
+        abletonMessage.addIntArg(i+1); //parameter - 0 is on/off, so start from 1
         if (i == 0) {// nFacesTotal maps to X: Probability
-            abletonMessage.addIntArg(4); //parameter
-            abletonMessage.addIntArg(nFacesTotal*20); //value - from 0-127
+            abletonMessage.addIntArg(nFacesTotal*10); //Send the total number of faces * a factor. Make that factor controllable from the GUI!
         } else if (i == 1) {// avgMoodTotal maps to X: CENTER
-            abletonMessage.addIntArg(2); //parameter
             abletonMessage.addIntArg(int(avgMoodTotal*127)); //value - from 0-127
+        } else if (i == 2) {// varMoodTotal maps to Y: RANGE
+            abletonMessage.addIntArg(int(varMoodTotal*127)); //value - from 0-127
         }
         senderToAbleton.sendMessage(abletonMessage, false);
     }
@@ -269,11 +275,12 @@ void ofApp::sendOsc(){
     
     
     
-    //Send to MadMapper
+    //Send OSC to MadMapper
     ofxOscMessage madMapperMessage;
     madMapperMessage.setAddress("/whatever");
-    madMapperMessage.addFloatArg(1.0); //not sure?
-    madMapperMessage.addFloatArg(1.0); //not sure?
-    madMapperMessage.addFloatArg(1.0); //not sure?
+    madMapperMessage.addFloatArg(nFacesTotal);
+    madMapperMessage.addFloatArg(avgMoodTotal);
+    madMapperMessage.addFloatArg(varMoodTotal);
+    madMapperMessage.addFloatArg(longTermAvgMoodTotal);
     senderToMadmapper.sendMessage(madMapperMessage, false);
 }
