@@ -27,8 +27,8 @@ void ofApp::setup(){
     }
     
     //Setup Grabber //Delete afterwards
-    grabber.setDeviceID(1);
-    grabber.setup(1280,720);
+//    grabber.setDeviceID(1);
+//    grabber.setup(1280,720);
     
     // Setup tracker
     tracker.faceDetectorImageSize = 640*360;
@@ -58,6 +58,7 @@ void ofApp::setup(){
     gui.add(trackingResolution.setup("hi-res tracking", false));
     gui.add(gDeviceId.set("deviceId", ofToString(0)));
     gui.add(bCameraSettings.setup("change Camera settings"));
+    gui.add(debugView.setup("debugView", true));
     
     //OSC
     sender.setup("localhost", 12001);
@@ -87,6 +88,7 @@ void ofApp::eChangeCamera() {
     if (selection != "") {
         int newDeviceId = ofToInt(selection);
         grabber.setDeviceID(newDeviceId);
+        grabber.setDesiredFrameRate(5);
         grabber.initGrabber(1280, 720);
         gDeviceId.set(ofToString(newDeviceId));
     }
@@ -202,13 +204,17 @@ void ofApp::update(){
 
 //--------------------------------------------------------------
 void ofApp::draw(){
+    
+    if (debugView) {
+    
     if (claheFilter) {
         outputImage.draw(0,0);
     } else {
         grabber.draw(0, 0);
     }
     tracker.drawDebug();
-    
+    }
+        
     for (int i = 0; i < tracker.size(); i++) {
         
         ofRectangle bb = tracker.getInstances()[i].getBoundingBox();
@@ -301,6 +307,3 @@ void ofApp::exit(){
     sender.sendMessage(msg, false);
     
 }
-
-
-

@@ -42,6 +42,7 @@ public:
     //ofxGui
     ofxToggle claheFilter;
     ofxIntSlider clipLimit;
+    ofxToggle debugView;
     ofxPanel gui;
     
     ofParameter<string>gDeviceId;
