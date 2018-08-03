@@ -2,15 +2,17 @@
 
 #include "ofMain.h"
 #include "ofxOsc.h"
+#include "ofxGui.h"
 
 #define ABLETONPORT 9000
-#define MADMAPPERPORT 8000
+#define MADMAPPERPORT 10001
 
 #define WEBCAM1PORT 12000
 #define WEBCAM2PORT 12001
 
 #define WEBCAMMESSAGE "/webcam"
 
+#define MADMAPPERMESSAGE "/faceinfo"
 
 class ofApp : public ofBaseApp{
 
@@ -18,15 +20,17 @@ class ofApp : public ofBaseApp{
 		void setup();
 		void update();
 		void draw();
+        void AddNewValue(float val);
         void recieveOsc();
         void sendOsc();
+    
+    void longTermMinutesChanged(int & longTermMinutes);
     
     ofxOscReceiver receiverWebcam1;
     ofxOscReceiver receiverWebcam2;
     
     ofxOscSender senderToAbleton;
     ofxOscSender senderToMadmapper;
-    
     
     //Summed variables
     int nFacesTotal;
@@ -48,6 +52,19 @@ class ofApp : public ofBaseApp{
     long webcam2Timer;
     
     
+    //GUI
+    ofxPanel gui;
+    ofxIntSlider nFaceFactor;
+    ofxFloatSlider longTermAvgMoodThreshold;
+    ofxIntSlider longTermMinutes; 
     
+    //longTermAvgMoodTotal variables
+    float sum = 0;
+    vector<float>storedValues; //rename!
+    int count = 0;
+    
+    //Time
+    unsigned int timeElapsed;
+    unsigned int pTimeElapsed;
     
 };

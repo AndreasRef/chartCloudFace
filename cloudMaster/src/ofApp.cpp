@@ -30,6 +30,18 @@ void ofApp::setup(){
     ofxOscMessage abletonMessage;
     abletonMessage.setAddress("/live/play");
     senderToAbleton.sendMessage(abletonMessage, false);
+    
+    
+    //Gui
+    longTermMinutes.addListener(this, &ofApp::longTermMinutesChanged);
+    
+    gui.setup();
+    gui.add(nFaceFactor.setup("nFaceFactor", 10, 1, 32));
+    gui.add(longTermAvgMoodThreshold.setup("moodThreshold", 0.3, 0.0, 1.0));
+    gui.add(longTermMinutes.setup("longTermMinutes", 1, 1, 6*60));
+    
+    //longTermAvgMoodTotal vector
+    storedValues.resize(longTermMinutes*60);
 }
 
 //--------------------------------------------------------------
@@ -40,25 +52,38 @@ void ofApp::update(){
     //Perform calculations
     nFacesTotal = nFacesWebcam1 + nFacesWebcam2;
     
-    if (nFacesWebcam1==0) {
+    if (nFacesWebcam1==0) { //If one webcam does not see anybody, set the total values to follow the other camera
         avgMoodTotal = avgMoodWebcam2;
         varMoodTotal = varMoodWebcam2;
-    } else if (nFacesWebcam2==0) {
+    } else if (nFacesWebcam2==0) { //If one webcam does not see anybody, set the total values to follow the other camera
         avgMoodTotal = avgMoodWebcam1;
         varMoodTotal = varMoodWebcam1;
-    } else {
-        avgMoodTotal = (avgMoodWebcam1+avgMoodWebcam2)/2;
-        varMoodTotal = (varMoodWebcam1+varMoodWebcam2)/2;
+    } else { //If both cameras detect faces, perform calculations
+        avgMoodTotal = nFacesWebcam1*avgMoodWebcam1/nFacesTotal + nFacesWebcam2*avgMoodWebcam2/nFacesTotal; //weighted avg
+        
+        //avgMoodTotal = (avgMoodWebcam1+avgMoodWebcam2)/2;
+        
+        varMoodTotal = max(max(varMoodWebcam1,varMoodWebcam2),abs(avgMoodWebcam1-avgMoodWebcam2)); //lazy varMoodTotal: the proper thing to do would be to compare max+min from both cameras, but this sounds nicer :-)
     }
     
     
-    float previousLongTermMood = longTermAvgMoodTotal; //Variable that contains the previous value of longTermAvgMoodTotal
     
     
-    if (ofGetFrameNum() % 30 == 0) { //Stuff we don't need to do all the time
-        longTermAvgMoodTotal = ofLerp(longTermAvgMoodTotal, avgMoodTotal, 0.01); //Quick longTermAvgMoodTotal: Lerping
+    //longTermAvgMoodTotal calculations
+    timeElapsed = round(ofGetElapsedTimef());
+    if (timeElapsed > pTimeElapsed) {
         
-        if (longTermAvgMoodTotal > 0.5 && previousLongTermMood < 0.5) { //If longTermAvgMood goes above 0.5, trigg clips in Ableton
+        float previousLongTermMood = longTermAvgMoodTotal; //Variable that contains the previous value of longTermAvgMoodTotal
+        
+        AddNewValue(avgMoodTotal);
+        
+        if(count > 0)
+        {
+            longTermAvgMoodTotal = sum / count;
+        }
+        
+        
+        if (longTermAvgMoodTotal > longTermAvgMoodThreshold && previousLongTermMood < longTermAvgMoodThreshold) { //If longTermAvgMood goes above longTermAvgMoodThreshold, trigg clips in Ableton
             cout << "bang happy" << endl;
             
             ofxOscMessage abletonMessage;
@@ -66,19 +91,37 @@ void ofApp::update(){
             abletonMessage.addIntArg(1); //launch scene number
             senderToAbleton.sendMessage(abletonMessage, false);
             
-        } else if (longTermAvgMoodTotal < 0.5 && previousLongTermMood > 0.5) { //If longTermAvgMood goes belov 0.5, trigg clips in Ableton
+            //Send a signal to MadMapper
+            
+            
+        } else if (longTermAvgMoodTotal < longTermAvgMoodThreshold && previousLongTermMood > longTermAvgMoodThreshold) { //If longTermAvgMood goes belov 0.5, trigg clips in Ableton
             cout << "bang sad" << endl;
             
             ofxOscMessage abletonMessage;
             abletonMessage.setAddress("/live/play/scene");
             abletonMessage.addIntArg(0); //launch scene number
             senderToAbleton.sendMessage(abletonMessage, false);
+            
+            //Send a signal to MadMapper
+            
         }
+        
+        
+        
+    }
+    
+    pTimeElapsed = timeElapsed;
+    
+    
+    
+    
+    if (ofGetFrameNum() % 30 == 0) { //Stuff we don't need to do all the time
+        
         sendOsc();
     }
     
     
-    //Timer for messages not recieved
+    //Timer for messages not recieved - will set values to zero if there is no messages for 200 frames from each webcam sketch
     if (webcam1Timer > 200) {
         nFacesWebcam1 = 0;
         avgMoodWebcam1 = 0;
@@ -100,14 +143,22 @@ void ofApp::draw(){
     ofBackground(0);
     
     ofSetColor(255);
-    ofDrawLine(0, ofGetHeight()/2, ofGetWidth(), ofGetHeight()/2);
     
-    //Draw info
+    ofDrawLine(0, 200, ofGetWidth(), 200);
+    
+    ofDrawLine(0, ofGetHeight()/2 + 100, ofGetWidth(), ofGetHeight()/2+100);
+    
+    // DRAW INFO
+    
+    //GUI
+    ofDrawBitmapString("GUI", ofGetWidth()/3 + 50, 30);
+    
+    gui.draw();
     
     
     //SUMMED INPUTS
     int x = 10;
-    int y = 30;
+    int y = 230;
     
     int yInc = 30;
     
@@ -128,7 +179,7 @@ void ofApp::draw(){
     
     //WEBCAM1 INPUT
     x = ofGetWidth()/3 + 50;
-    y = 30;
+    y = 230;
     
     ofDrawBitmapString("WEBCAM1 INPUT", x, y);
     y+=yInc;
@@ -150,7 +201,7 @@ void ofApp::draw(){
     
     //WEBCAM2 INPUT
     x = 2*ofGetWidth()/3 + 50;
-    y = 30;
+    y = 230;
     
     ofDrawBitmapString("WEBCAM2 INPUT", x, y);
     y+=yInc;
@@ -172,7 +223,7 @@ void ofApp::draw(){
 
     //ABLETON OUTPUT
     x = 10;
-    y = 40 + ofGetHeight()/2;
+    y = 140 + ofGetHeight()/2;
     
     ofDrawBitmapString("ABLETON OUTPUT", x, y);
     y+=yInc;
@@ -180,15 +231,22 @@ void ofApp::draw(){
     ofDrawBitmapString("Port: " + ofToString(ABLETONPORT), x, y);
     y+=yInc;
     
-    ofDrawBitmapString("adress: /live/device (0) (0) (1-4)", x, y);
+    ofDrawBitmapString("adress: /live/device (0) (0) (1-3)", x, y);
     y+=yInc;
     
-    ofDrawBitmapString("values: " + ofToString(nFacesTotal) + " " + ofToString(avgMoodTotal) + " " + ofToString(varMoodTotal)  + " " + ofToString(longTermAvgMoodTotal, 2), x, y);
-
+    ofDrawBitmapString("values: " + ofToString(min(nFacesTotal*nFaceFactor,127)) + " " + ofToString(avgMoodTotal*127) + " " + ofToString(varMoodTotal*127), x, y);
+    y+=yInc;
+    
+    if (longTermAvgMoodTotal > longTermAvgMoodThreshold) {
+        ofDrawBitmapString("/live/play/scene (1)", x, y);
+    } else if (longTermAvgMoodTotal < longTermAvgMoodThreshold) {
+        ofDrawBitmapString("/live/play/scene (0)", x, y);
+    }
+    
     
     //MADMAPPER OUTPUT
     x = ofGetWidth()/2 + 30;
-    y = 40 + ofGetHeight()/2;
+    y = 140 + ofGetHeight()/2;
     
     ofDrawBitmapString("MADMAPPER OUTPUT", x, y);
     y+=yInc;
@@ -196,13 +254,47 @@ void ofApp::draw(){
     ofDrawBitmapString("Port: " + ofToString(MADMAPPERPORT), x, y);
     y+=yInc;
     
-    ofDrawBitmapString("adress: /whatever/whatever", x, y);
+    ofDrawBitmapString("adress: "+ ofToString(MADMAPPERMESSAGE), x, y);
     y+=yInc;
     
-    ofDrawBitmapString("values: " + ofToString(nFacesTotal) + " " + ofToString(avgMoodTotal) + " " + ofToString(varMoodTotal)  + " " + ofToString(longTermAvgMoodTotal, 2), x, y);
+    ofDrawBitmapString("values: " + ofToString(nFacesTotal*nFaceFactor) + " " + ofToString(avgMoodTotal) + " " + ofToString(varMoodTotal)  + " " + ofToString(longTermAvgMoodTotal, 2), x, y);
     
     
 }
+
+//--------------------------------------------------------------
+void ofApp::longTermMinutesChanged(int &longTermMinutes){
+    storedValues.resize(longTermMinutes*60);
+    
+    count = 0;
+    sum = 0;
+}
+
+
+//--------------------------------------------------------------
+void ofApp::AddNewValue(float val){
+    if(count < storedValues.size())
+    {
+        //array is not full yet
+        storedValues[count++] = val;
+        
+        sum += val;
+    }
+    else
+    {
+        sum += val;
+        sum -= storedValues[0];
+        
+        //shift all of the values, drop the first one (oldest)
+        for(int i = 0; i < storedValues.size()-1; i++)
+        {
+            storedValues[i] = storedValues[i+1] ;
+        }
+        //the add the new one
+        storedValues[storedValues.size()-1] = val;
+    }
+}
+
 
 
 //--------------------------------------------------------------
@@ -216,8 +308,6 @@ void ofApp::recieveOsc(){
         ofxOscMessage m;
         receiverWebcam1.getNextMessage(m);
         
-        //cout << m << endl;
-        
         
         // check adress
         if(m.getAddress() == WEBCAMMESSAGE){
@@ -225,10 +315,7 @@ void ofApp::recieveOsc(){
             avgMoodWebcam1 = m.getArgAsFloat(1);
             varMoodWebcam1 = m.getArgAsFloat(2);
         }
-        
         webcam1Timer=0;
-        
-        
     }
     
     //Recieve from webcam2
@@ -263,7 +350,7 @@ void ofApp::sendOsc(){
         abletonMessage.addIntArg(0); //device
         abletonMessage.addIntArg(i+1); //parameter - 0 is on/off, so start from 1
         if (i == 0) {// nFacesTotal maps to X: Probability
-            abletonMessage.addIntArg(nFacesTotal*10); //Send the total number of faces * a factor. Make that factor controllable from the GUI!
+            abletonMessage.addIntArg(min(nFacesTotal*nFaceFactor,127));
         } else if (i == 1) {// avgMoodTotal maps to X: CENTER
             abletonMessage.addIntArg(int(avgMoodTotal*127)); //value - from 0-127
         } else if (i == 2) {// varMoodTotal maps to Y: RANGE
@@ -277,7 +364,7 @@ void ofApp::sendOsc(){
     
     //Send OSC to MadMapper
     ofxOscMessage madMapperMessage;
-    madMapperMessage.setAddress("/whatever");
+    madMapperMessage.setAddress(MADMAPPERMESSAGE);
     madMapperMessage.addFloatArg(nFacesTotal);
     madMapperMessage.addFloatArg(avgMoodTotal);
     madMapperMessage.addFloatArg(varMoodTotal);
