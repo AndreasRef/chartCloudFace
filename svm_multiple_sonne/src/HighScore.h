@@ -8,10 +8,10 @@ public: // place public functions or variables declarations here
     // methods, equivalent to specific functions of your class objects
     void setup(ofImage _img, float _score);    // setup method, use this to setup your object's initial state
     void update();  // update method, used to refresh your objects properties
-    void draw();    // draw method, this where you'll do the object's drawing
+    void draw(int _y);    // draw method, this where you'll do the object's drawing
     
     // variables
-//    float x;        // position
+    int y;        // position
 //    float y;
     
     float score = -1;

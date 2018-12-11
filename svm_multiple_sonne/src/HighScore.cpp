@@ -7,8 +7,7 @@ void HighScore::setup(ofImage _img, float _score){
 //    y = ofRandom(0, ofGetHeight());
     
     highScoreImage = _img;
-    score = _score;
-
+    score = roundf(_score * 100) / 100;
     
 }
 
@@ -16,7 +15,7 @@ void HighScore::update(){
  
 }
 
-void HighScore::draw(){
-    highScoreImage.draw(ofGetWidth()-200,100);
-    ofDrawBitmapStringHighlight("Score: " + ofToString(score), ofGetWidth()-200,120);
+void HighScore::draw(int _y){
+    highScoreImage.draw(ofGetWidth()-200,_y);
+    ofDrawBitmapStringHighlight("Score: " + ofToString(score), ofGetWidth()-200, _y+120);
 }

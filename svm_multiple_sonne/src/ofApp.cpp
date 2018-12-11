@@ -203,7 +203,7 @@ void ofApp::update(){
             
             
             //CALCULATE MOODS + MAX, MIN, VAR & AVG
-            moods[i] = 0.5 + currentSmile - currentAngry;
+            moods[i] = 0.501 + currentSmile - currentAngry;
             
             avgMood+= moods[i];
             
@@ -323,7 +323,7 @@ void ofApp::draw(){
     //myHighScore.draw();
     
     for (int i = 0 ; i<highScores.size(); i++) {
-        highScores[i].draw();
+        highScores[i].draw(i*140);
     }
 }
 
@@ -426,6 +426,7 @@ void ofApp::mousePressed(int x, int y, int button){
 //    tempHighScore.score = moods[0];
     tempHighScore.setup(faceImgs[0], moods[0]);
     highScores.push_back(tempHighScore);
+    
     
     
     //myHighScore.score = moods[0];
