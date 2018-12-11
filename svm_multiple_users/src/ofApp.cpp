@@ -14,10 +14,10 @@ void ofApp::setup(){
    //img.load("images/exp6.jpg");
    //img.resize(ofGetWidth(),ofGetHeight());
 //
-//    video.load("videos/femaleFacialExpressions.mp4");
-//    video.setLoopState(OF_LOOP_NORMAL);
-//    video.setVolume(0);
-//    video.play();
+    video.load("videos/femaleFacialExpressions.mp4");
+    video.setLoopState(OF_LOOP_NORMAL);
+    video.setVolume(0);
+    video.play();
     
     // Set model path
     ofSetDataPathRoot(ofFile(__BASE_FILE__).getEnclosingDirectory()+"../../model/");
@@ -106,7 +106,7 @@ void ofApp::eChangeCamera() {
 void ofApp::update(){
     grabber.update();
     video.update();
-    //tracker.update(video);
+    tracker.update(video);
     //tracker.update(img);
     
     if(grabber.isFrameNew()){
@@ -125,9 +125,9 @@ void ofApp::update(){
         // convert to ofImage
         ofxCv::toOf(claheImg, outputImage);
         outputImage.update();
-        tracker.update(outputImage);
+        //tracker.update(outputImage);
         } else {
-        tracker.update(grabber);
+        //tracker.update(grabber);
         }
         
         varMood = 0;
@@ -224,7 +224,7 @@ void ofApp::draw(){
     }
     
     //img.draw(0,0);
-    //video.draw(0,0);
+    video.draw(0,0);
     tracker.drawDebug();
     
 #ifndef __OPTIMIZE__

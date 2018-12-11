@@ -87,13 +87,15 @@ void ofApp::update(){
             sender.sendMessage(m, false);
         
             
-            //Sloppy, should be redone with orientation
+            //Sloppy eyebrows, should be redone with orientation or perhaps inspired by the stuff that happens in (makeSample)?
             
             //Gesture
             faceDist = tracker.getInstances()[0].getPoseMatrix().getRowAsVec3f(3)[2];//Okay measure for distance between -2000, -10000
             faceDistMapped = ofMap(faceDist, -10000,-2000,0,5);
+        
+        float eyeBrowInput = (getGesture(RIGHT_EYEBROW_HEIGHT) + getGesture(LEFT_EYEBROW_HEIGHT) + getGesture(RIGHT_EYE_OPENNESS) + getGesture(LEFT_EYE_OPENNESS)) / 4;
             
-            filteredEyeBrows.update((getGesture(RIGHT_EYEBROW_HEIGHT) + getGesture(LEFT_EYEBROW_HEIGHT) + getGesture(RIGHT_EYE_OPENNESS) + getGesture(LEFT_EYE_OPENNESS)) / faceDistMapped ); //Also add eyes
+            filteredEyeBrows.update(eyeBrowInput); //Also add eyes
             //filteredEyeBrows.update( getGesture(RIGHT_EYEBROW_HEIGHT) / (faceDistMapped) + getGesture(LEFT_EYEBROW_HEIGHT) / (faceDistMapped) );
         //filteredEyeBrows.update( getGesture(RIGHT_EYEBROW_HEIGHT) + getGesture(LEFT_EYEBROW_HEIGHT));
         
