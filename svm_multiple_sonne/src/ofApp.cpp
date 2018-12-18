@@ -202,7 +202,8 @@ void ofApp::update(){
             
             
             //CALCULATE MOODS + MAX, MIN, VAR & AVG
-            moods[i] = 0.501 + currentSmile - currentAngry;
+            moods[i] = 0.5 + (ofNoise(ofGetFrameNum()/100.0)-0.5)*0.1 + currentSmile - currentAngry*2;
+            moods[i] = ofClamp(moods[i], 0, 1);
             
             avgMood+= moods[i];
             
@@ -262,26 +263,26 @@ void ofApp::draw(){
         ofRectangle bb = tracker.getInstances()[i].getBoundingBox();
         
         //Overall mood
-        //        ofFill();
-        //        ofDrawBitmapStringHighlight("mood", bb.x-15, bb.y -10 );
-        //        ofDrawRectangle(bb.x + 50, bb.y - 25, 100*moods[i], 20);
-        //
-        //        ofNoFill();
-        //        ofDrawRectangle(bb.x + 50, bb.y - 25, 100, 20);
-        //        ofFill();
+                ofFill();
+                ofDrawBitmapStringHighlight("beauty", bb.x-15, bb.y -10 );
+                ofDrawRectangle(bb.x + 50, bb.y - 25, 100*moods[i], 20);
         
-        //        myImg.setFromPixels(grabber.getPixels());
-        //        myImg.crop(bb.x, bb.y, bb.width, bb.height);
-        //        myImg.resize(100, 100);
+                ofNoFill();
+                ofDrawRectangle(bb.x + 50, bb.y - 25, 100, 20);
+                ofFill();
         
-//        faceImgs[i].setFromPixels(grabber.getPixels());
-//        faceImgs[i].crop(bb.x, bb.y, bb.width, bb.height);
-//        faceImgs[i].resize(faceScaler, faceScaler);
+//                myImg.setFromPixels(grabber.getPixels());
+//                myImg.crop(bb.x, bb.y, bb.width, bb.height);
+//                myImg.resize(100, 100);
+        
+        faceImgs[i].setFromPixels(grabber.getPixels());
+        faceImgs[i].crop(bb.x, bb.y, bb.width, bb.height);
+        faceImgs[i].resize(faceScaler, faceScaler);
 //
 //        faceImgs[i].draw(i*faceScaler +faceScaler, 600);
-        faceImgs[i].draw(i*faceScaler +faceScaler, 600);
+        //faceImgs[i].draw(i*faceScaler +faceScaler, 600);
     }
-    
+/*
     // Draw framerate
     ofDrawBitmapStringHighlight("Framerate : "+ofToString(ofGetFrameRate()), 10, 170);
     ofDrawBitmapStringHighlight("Tracker thread framerate : "+ofToString(tracker.getThreadFps()), 10, 190);
@@ -297,6 +298,8 @@ void ofApp::draw(){
     ofDrawBitmapStringHighlight("nPersons: " + ofToString(tracker.size()), 10, 250);
     ofDrawBitmapStringHighlight("avgMood: " + ofToString(avgMood), 10, 270);
     ofDrawBitmapStringHighlight("varMood: " + ofToString(varMood), 10, 290);
+    
+*/
     
     for (int i = 0; i<storedFaces.size();i++ ) {
         storedFaces[i].draw(ofGetWidth()-150, i*120);
