@@ -1,4 +1,5 @@
 #include "HighScore.h"
+#include "ofMain.h"
 HighScore::HighScore(){
 }
 
@@ -17,7 +18,7 @@ void HighScore::update(){
 
 void HighScore::draw(int _y){
     highScoreImage.draw(ofGetWidth()-200,_y);
-    ofDrawBitmapStringHighlight("Score: " + ofToString(score), ofGetWidth()-200, _y+120);
+    ofDrawBitmapStringHighlight("Score: " + ofToString(score), ofGetWidth()-200, _y + ofGetHeight()/10 + 10);
 }
 
 

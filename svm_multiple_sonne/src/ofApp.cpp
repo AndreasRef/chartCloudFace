@@ -12,9 +12,9 @@ void ofApp::setup(){
     dlib::deserialize(ofToDataPath("data_small_smile.func")) >> learned_functions[1];
     
     //Static image + video
-   //img.load("images/exp6.jpg");
-   //img.resize(ofGetWidth(),ofGetHeight());
-//
+    //img.load("images/exp6.jpg");
+    //img.resize(ofGetWidth(),ofGetHeight());
+    //
     video.load("videos/femaleFacialExpressions.mp4");
     video.setLoopState(OF_LOOP_NORMAL);
     video.setVolume(0);
@@ -73,7 +73,6 @@ void ofApp::setup(){
     //OSC
     sender.setup("localhost", 12000);
     
-
     faceImgs.resize(100);
     
     storedFaces.resize(6);
@@ -87,13 +86,15 @@ void ofApp::setup(){
     //OOP
     //myHighScore.setup();
     
+    faceScaler = ofGetHeight()/10;
+    
 }
 
 
 //--------------------------------------------------------------
 void ofApp::trackingResolutionChanged(bool &hiRes){
     if (hiRes == false) {
-       tracker.faceDetectorImageSize = 640*360;
+        tracker.faceDetectorImageSize = 640*360;
     } else if (hiRes == true) {
         tracker.faceDetectorImageSize = 960*540;
     }
@@ -124,29 +125,28 @@ void ofApp::update(){
     
     //myHighScore.update();
     
-    
     //tracker.update(video);
     //tracker.update(img);
     
     if(grabber.isFrameNew()){
         
         if (claheFilter) { //GUI claheFilter
-        //CLAHE
-        cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
-        clahe->setClipLimit(clipLimit);
-        
-        //Grayscale
-        ofxCv::copyGray(grabber, greyImg);
-        
-        // apply the CLAHE algorithm
-        clahe->apply(greyImg,claheImg);
-        
-        // convert to ofImage
-        ofxCv::toOf(claheImg, outputImage);
-        outputImage.update();
-        tracker.update(outputImage);
+            //CLAHE
+            cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+            clahe->setClipLimit(clipLimit);
+            
+            //Grayscale
+            ofxCv::copyGray(grabber, greyImg);
+            
+            // apply the CLAHE algorithm
+            clahe->apply(greyImg,claheImg);
+            
+            // convert to ofImage
+            ofxCv::toOf(claheImg, outputImage);
+            outputImage.update();
+            tracker.update(outputImage);
         } else {
-        tracker.update(grabber);
+            tracker.update(grabber);
         }
         
         varMood = 0;
@@ -262,26 +262,26 @@ void ofApp::draw(){
         ofRectangle bb = tracker.getInstances()[i].getBoundingBox();
         
         //Overall mood
-        ofFill();
-        ofDrawBitmapStringHighlight("mood", bb.x-15, bb.y -10 );
-        ofDrawRectangle(bb.x + 50, bb.y - 25, 100*moods[i], 20);
+        //        ofFill();
+        //        ofDrawBitmapStringHighlight("mood", bb.x-15, bb.y -10 );
+        //        ofDrawRectangle(bb.x + 50, bb.y - 25, 100*moods[i], 20);
+        //
+        //        ofNoFill();
+        //        ofDrawRectangle(bb.x + 50, bb.y - 25, 100, 20);
+        //        ofFill();
         
-        ofNoFill();
-        ofDrawRectangle(bb.x + 50, bb.y - 25, 100, 20);
-        ofFill();
+        //        myImg.setFromPixels(grabber.getPixels());
+        //        myImg.crop(bb.x, bb.y, bb.width, bb.height);
+        //        myImg.resize(100, 100);
         
-//        myImg.setFromPixels(grabber.getPixels());
-//        myImg.crop(bb.x, bb.y, bb.width, bb.height);
-//        myImg.resize(100, 100);
-        
-        faceImgs[i].setFromPixels(grabber.getPixels());
-        faceImgs[i].crop(bb.x, bb.y, bb.width, bb.height);
-        faceImgs[i].resize(100, 100);
-        
-        faceImgs[i].draw(i*120 +100, 600);
-        
+//        faceImgs[i].setFromPixels(grabber.getPixels());
+//        faceImgs[i].crop(bb.x, bb.y, bb.width, bb.height);
+//        faceImgs[i].resize(faceScaler, faceScaler);
+//
+//        faceImgs[i].draw(i*faceScaler +faceScaler, 600);
+        faceImgs[i].draw(i*faceScaler +faceScaler, 600);
     }
-
+    
     // Draw framerate
     ofDrawBitmapStringHighlight("Framerate : "+ofToString(ofGetFrameRate()), 10, 170);
     ofDrawBitmapStringHighlight("Tracker thread framerate : "+ofToString(tracker.getThreadFps()), 10, 190);
@@ -305,8 +305,33 @@ void ofApp::draw(){
     //gui.draw();
     //myHighScore.draw();
     
-    for (int i = 0 ; i<highScores.size(); i++) {
-        highScores[i].draw(i*140);
+    //    for (int i = 0 ; i<highScores.size(); i++) {
+    //        highScores[i].draw(i*(faceScaler+20));
+    //    }
+    
+    if (highScores.size()>5) {
+        
+        ofDrawBitmapStringHighlight("3 most beautiful", ofGetWidth()-200, 30);
+        ofDrawBitmapStringHighlight("3 least beautiful", ofGetWidth()-200, ofGetHeight()/2 + 35);
+        for (int i = 0 ; i<3; i++) {
+            highScores[i].draw(i*(faceScaler+30)+50); //Top 3
+            //highScores[highScores.size()-i-1].draw(ofGetHeight() - i*(faceScaler+30)+50); //Bottom 3
+        }
+        
+        for (int i = highScores.size()-3 ; i<highScores.size(); i++) {
+            highScores[i].draw((i-highScores.size()+3)*(faceScaler+30)+ ofGetHeight()/2 + 50); //Bottom 3
+        }
+        
+    }
+    else {
+        if (highScores.size()>1) {
+          ofDrawBitmapStringHighlight(ofToString(highScores.size()) + " most beautiful", ofGetWidth()-200, 30);
+        } else if (highScores.size()>0) {
+          ofDrawBitmapStringHighlight("most beautiful", ofGetWidth()-200, 30);
+        }
+        for (int i = 0 ; i<highScores.size(); i++) {
+            highScores[i].draw(i*(faceScaler+30)+50);
+        }
     }
 }
 
@@ -396,9 +421,20 @@ float ofApp:: getGesture (Gesture gesture, int id){
     return (gestureFloat/compareFloat);
 }
 
-
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
+    
+    for (int i = 0; i < tracker.size(); i++) {
+        
+        faceImgs[i].clear();
+        
+        ofRectangle bb = tracker.getInstances()[i].getBoundingBox();
+        
+        faceImgs[i].setFromPixels(grabber.getPixels());
+        faceImgs[i].crop(bb.x, bb.y, bb.width, bb.height);
+        faceImgs[i].resize(faceScaler, faceScaler);
+    }
+    
     
     for (int i = 0; i < tracker.size(); i++) {
         HighScore tempHighScore;
@@ -407,12 +443,15 @@ void ofApp::mousePressed(int x, int y, int button){
     }
     
     ofSort(highScores, my_compare);
+    
+    
+
+    
+    
+    
 }
 
 //--------------------------------------------------------------
 static bool my_compare(HighScore &a, HighScore &b){
-    return a.score < b.score;
+    return a.score > b.score;
 }
-
-
-

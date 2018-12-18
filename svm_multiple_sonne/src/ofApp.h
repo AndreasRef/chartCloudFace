@@ -34,12 +34,6 @@ public:
     
     void mousePressed(int x, int y, int button);
     
-    
-    
-    
-//    void setupOSC();
-//    void sendOSC();
-    
     ofxFaceTracker2 tracker;
     ofVideoGrabber grabber;
     
@@ -48,11 +42,9 @@ public:
     cv::Mat greyImg, labImg, claheImg, tmpImg;
     ofImage outputImage;
     
-    
     //Static image + video
     ofImage img;
     ofVideoPlayer video;
-    
     
     //SmileSVM
     sample_type makeSampleID(int id);
@@ -89,15 +81,10 @@ public:
     float avgMood;
     float varMood;
     
-    
     // osc
     ofxOscSender sender;
     string oscDestination, oscAddress;
     int oscPort;
-    
-    // offScreen buffer
-//    ofFbo fbo;
-//    ofImage myImg;
     
     vector<ofImage> faceImgs;
     vector<ofImage> storedFaces;
@@ -107,7 +94,7 @@ public:
     
     vector <HighScore> highScores;
     
-    
+    int faceScaler;
     
 };
 
