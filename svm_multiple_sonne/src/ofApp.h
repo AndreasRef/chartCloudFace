@@ -95,17 +95,15 @@ public:
     int oscPort;
     
     // offScreen buffer
-    ofFbo fbo;
-    ofImage myImg;
-    vector<ofImage> faceImgs;
+//    ofFbo fbo;
+//    ofImage myImg;
     
+    vector<ofImage> faceImgs;
     vector<ofImage> storedFaces;
     
     //OOP
     HighScore myHighScore;
     
     vector <HighScore> highScores;
-    
-    
     
 };

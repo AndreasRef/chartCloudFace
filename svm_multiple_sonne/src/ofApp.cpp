@@ -73,8 +73,7 @@ void ofApp::setup(){
     //OSC
     sender.setup("localhost", 12000);
     
-    // offScreen buffer / storedFaces
-    //fbo.allocate(200, 200, GL_RGBA);
+
     faceImgs.resize(100);
     
     storedFaces.resize(6);
@@ -271,18 +270,15 @@ void ofApp::draw(){
         ofDrawRectangle(bb.x + 50, bb.y - 25, 100, 20);
         ofFill();
         
-        myImg.setFromPixels(grabber.getPixels());
-        myImg.crop(bb.x, bb.y, bb.width, bb.height);
-        myImg.resize(100, 100);
-        //myImg.grabScreen(bb.x, bb.y, bb.width, bb.height);
+//        myImg.setFromPixels(grabber.getPixels());
+//        myImg.crop(bb.x, bb.y, bb.width, bb.height);
+//        myImg.resize(100, 100);
         
         faceImgs[i].setFromPixels(grabber.getPixels());
         faceImgs[i].crop(bb.x, bb.y, bb.width, bb.height);
         faceImgs[i].resize(100, 100);
         
-        
         faceImgs[i].draw(i*120 +100, 600);
-        
         
     }
 
@@ -302,22 +298,9 @@ void ofApp::draw(){
     ofDrawBitmapStringHighlight("avgMood: " + ofToString(avgMood), 10, 270);
     ofDrawBitmapStringHighlight("varMood: " + ofToString(varMood), 10, 290);
     
-    
-//    fbo.begin();
-//    ofBackground(255,0,0);
-//    ofSetColor(255);
-//    img.drawSubsection(0, 0, 100, 100, mouseX, mouseY);
-//    fbo.end();
-//    fbo.draw(ofGetMouseX(), ofGetMouseY());
-//
-    //myImg.draw(ofGetMouseX(), ofGetMouseY());
-    
-    
-    
     for (int i = 0; i<storedFaces.size();i++ ) {
         storedFaces[i].draw(ofGetWidth()-150, i*120);
     }
-    
     
     //gui.draw();
     //myHighScore.draw();
@@ -416,20 +399,12 @@ float ofApp:: getGesture (Gesture gesture, int id){
 
 //--------------------------------------------------------------
 void ofApp::mousePressed(int x, int y, int button){
-    //myHighScore.highScoreImage.setFromPixels(faceImgs[0]);
     
-    //HighScore tempHighScore(faceImgs[0], moods[0]);
-    
-    HighScore tempHighScore;
-    
-//    tempHighScore.highScoreImage.setFromPixels(faceImgs[0]);
-//    tempHighScore.score = moods[0];
-    tempHighScore.setup(faceImgs[0], moods[0]);
-    highScores.push_back(tempHighScore);
-    
-    
-    
-    //myHighScore.score = moods[0];
+    for (int i = 0; i < tracker.size(); i++) {
+        HighScore tempHighScore;
+        tempHighScore.setup(faceImgs[i], moods[i]);
+        highScores.push_back(tempHighScore);
+    }
 }
 
 
