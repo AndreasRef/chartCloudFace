@@ -19,3 +19,5 @@ void HighScore::draw(int _y){
     highScoreImage.draw(ofGetWidth()-200,_y);
     ofDrawBitmapStringHighlight("Score: " + ofToString(score), ofGetWidth()-200, _y+120);
 }
+
+

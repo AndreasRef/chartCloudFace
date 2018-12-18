@@ -405,6 +405,13 @@ void ofApp::mousePressed(int x, int y, int button){
         tempHighScore.setup(faceImgs[i], moods[i]);
         highScores.push_back(tempHighScore);
     }
+    
+    ofSort(highScores, my_compare);
+}
+
+//--------------------------------------------------------------
+static bool my_compare(HighScore &a, HighScore &b){
+    return a.score < b.score;
 }
 
 

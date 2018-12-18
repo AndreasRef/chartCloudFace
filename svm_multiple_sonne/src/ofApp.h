@@ -36,6 +36,7 @@ public:
     
     
     
+    
 //    void setupOSC();
 //    void sendOSC();
     
@@ -106,4 +107,8 @@ public:
     
     vector <HighScore> highScores;
     
+    
+    
 };
+
+static bool my_compare(HighScore &a, HighScore &b);
