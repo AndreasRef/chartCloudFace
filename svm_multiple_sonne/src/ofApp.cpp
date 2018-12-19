@@ -21,7 +21,7 @@ void ofApp::setup(){
     //video.play();
     
     // Set model path
-    ofSetDataPathRoot(ofFile(__BASE_FILE__).getEnclosingDirectory()+"../../model/");
+    //ofSetDataPathRoot(ofFile(__BASE_FILE__).getEnclosingDirectory()+"../../model/");
     
     //Print out a list of devices
     vector<ofVideoDevice> devices = grabber.listDevices();
